@@ -25,7 +25,7 @@ class Product
     /**
      * @var Collection<int, Sku>
      */
-    #[ORM\OneToMany(targetEntity: Sku::class, mappedBy: 'product', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: Sku::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
     private Collection $skus;
 
     public function __construct()
@@ -96,6 +96,13 @@ class Product
         return $this->skus;
     }
 
+    /**
+     * Adds a SKU to the collection if it does not already exist.
+     *
+     * @param Sku $sku The SKU to be added.
+     *
+     * @return static Returns the current instance for method chaining.
+     */
     public function addSku(Sku $sku): static
     {
         if (!$this->skus->contains($sku)) {
@@ -106,6 +113,13 @@ class Product
         return $this;
     }
 
+    /**
+     * Removes a SKU from the collection if it exists.
+     *
+     * @param Sku $sku The SKU to be removed.
+     *
+     * @return static Returns the current instance for method chaining.
+     */
     public function removeSku(Sku $sku): static
     {
         if ($this->skus->removeElement($sku)) {
