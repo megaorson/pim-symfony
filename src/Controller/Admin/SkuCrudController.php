@@ -23,13 +23,6 @@ class SkuCrudController extends AbstractCrudController
             TextField::new('sku'),
             MoneyField::new('price')->setCurrency('USD'),
 
-            CollectionField::new('attributeValues')
-                ->useEntryCrudForm()
-                ->allowAdd()
-                ->allowDelete()
-                ->setFormTypeOptions([
-                    'by_reference' => false,
-                ]),
         ];
     }
 }

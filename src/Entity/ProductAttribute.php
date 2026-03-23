@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Entity;
 
@@ -16,24 +17,13 @@ class ProductAttribute
     private ?int $id = null;
 
     #[ORM\Column(length: 100)]
-    private ?string $ccode = null;
+    private ?string $code = null;
 
     #[ORM\Column(length: 50)]
     private ?string $type = null;
 
     #[ORM\Column(length: 255)]
     private ?string $name = null;
-
-    /**
-     * @var Collection<int, ProductAttributeValue>
-     */
-    #[ORM\OneToMany(targetEntity: ProductAttributeValue::class, mappedBy: 'attribute', orphanRemoval: true)]
-    private Collection $productAttributeValues;
-
-    public function __construct()
-    {
-        $this->productAttributeValues = new ArrayCollection();
-    }
 
     public function getId(): ?int
     {
@@ -42,12 +32,12 @@ class ProductAttribute
 
     public function getCode(): ?string
     {
-        return $this->ccode;
+        return $this->code;
     }
 
-    public function setCode(string $ccode): static
+    public function setCode(string $code): static
     {
-        $this->ccode = $ccode;
+        $this->code = $code;
 
         return $this;
     }
@@ -72,36 +62,6 @@ class ProductAttribute
     public function setName(string $name): static
     {
         $this->name = $name;
-
-        return $this;
-    }
-
-    /**
-     * @return Collection<int, ProductAttributeValue>
-     */
-    public function getProductAttributeValues(): Collection
-    {
-        return $this->productAttributeValues;
-    }
-
-    public function addProductAttributeValue(ProductAttributeValue $productAttributeValue): static
-    {
-        if (!$this->productAttributeValues->contains($productAttributeValue)) {
-            $this->productAttributeValues->add($productAttributeValue);
-            $productAttributeValue->setAttribute($this);
-        }
-
-        return $this;
-    }
-
-    public function removeProductAttributeValue(ProductAttributeValue $productAttributeValue): static
-    {
-        if ($this->productAttributeValues->removeElement($productAttributeValue)) {
-            // set the owning side to null (unless already changed)
-            if ($productAttributeValue->getAttribute() === $this) {
-                $productAttributeValue->setAttribute(null);
-            }
-        }
 
         return $this;
     }

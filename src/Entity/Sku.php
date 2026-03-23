@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Entity;
 
@@ -18,19 +19,43 @@ class Sku
     #[ORM\Column(length: 100)]
     private ?string $sku = null;
 
-    #[ORM\Column]
-    private ?float $price = null;
+    #[ORM\Column(type: 'decimal', precision: 10, scale: 2)]
+    private ?string $price = null;
 
     #[ORM\ManyToOne(inversedBy: 'skus')]
     #[ORM\JoinColumn(nullable: false)]
     private ?Product $product = null;
 
-    #[ORM\OneToMany(mappedBy: 'sku', targetEntity: ProductAttributeValue::class, orphanRemoval: true)]
-    private ?Collection $attributeValues = null;
+    /**
+     * @var Collection<int, ProductAttributeValueText>
+     */
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueText::class, cascade: ['persist'], mappedBy: 'sku', orphanRemoval: true)]
+    private Collection $textValues;
+
+    /**
+     * @var Collection<int, ProductAttributeValueInt>
+     */
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueInt::class, cascade: ['persist'], mappedBy: 'sku', orphanRemoval: true)]
+    private Collection $intValues;
+
+    /**
+     * @var Collection<int, ProductAttributeValueImage>
+     */
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueImage::class, cascade: ['persist'], mappedBy: 'sku', orphanRemoval: true)]
+    private Collection $imageValues;
+
+    /**
+     * @var Collection<int, ProductAttributeValueDecimal>
+     */
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueDecimal::class, cascade: ['persist'], mappedBy: 'sku', orphanRemoval: true)]
+    private Collection $decimalValues;
 
     public function __construct()
     {
-        $this->attributeValues = new ArrayCollection();
+        $this->textValues = new ArrayCollection();
+        $this->intValues = new ArrayCollection();
+        $this->imageValues = new ArrayCollection();
+        $this->decimalValues = new ArrayCollection();
     }
 
     public function getId(): ?int
@@ -50,12 +75,12 @@ class Sku
         return $this;
     }
 
-    public function getPrice(): ?float
+    public function getPrice(): ?string
     {
         return $this->price;
     }
 
-    public function setPrice(float $price): static
+    public function setPrice(string $price): static
     {
         $this->price = $price;
 
@@ -74,26 +99,120 @@ class Sku
         return $this;
     }
 
-    public function getAttributeValues(): Collection
+    /**
+     * @return Collection<int, ProductAttributeValueText>
+     */
+    public function getTextValues(): Collection
     {
-        return $this->attributeValues;
+        return $this->textValues;
     }
 
-    public function addAttributeValue(ProductAttributeValue $value): self
+    public function addTextValue(ProductAttributeValueText $productAttributeValueText): static
     {
-        if (!$this->attributeValues->contains($value)) {
-            $this->attributeValues->add($value);
-            $value->setSku($this);
+        if (!$this->textValues->contains($productAttributeValueText)) {
+            $this->textValues->add($productAttributeValueText);
+            $productAttributeValueText->setSku($this);
         }
 
         return $this;
     }
 
-    public function removeAttributeValue(ProductAttributeValue $value): self
+    public function removeTextValue(ProductAttributeValueText $productAttributeValueText): static
     {
-        if ($this->attributeValues->removeElement($value)) {
-            if ($value->getSku() === $this) {
-                $value->setSku(null);
+        if ($this->textValues->removeElement($productAttributeValueText)) {
+            // set the owning side to null (unless already changed)
+            if ($productAttributeValueText->getSku() === $this) {
+                $productAttributeValueText->setSku(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductAttributeValueInt>
+     */
+    public function getIntValues(): Collection
+    {
+        return $this->intValues;
+    }
+
+    public function addIntValue(ProductAttributeValueInt $intValue): static
+    {
+        if (!$this->intValues->contains($intValue)) {
+            $this->intValues->add($intValue);
+            $intValue->setSku($this);
+        }
+
+        return $this;
+    }
+
+    public function removeIntValue(ProductAttributeValueInt $intValue): static
+    {
+        if ($this->intValues->removeElement($intValue)) {
+            // set the owning side to null (unless already changed)
+            if ($intValue->getSku() === $this) {
+                $intValue->setSku(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductAttributeValueImage>
+     */
+    public function getImageValues(): Collection
+    {
+        return $this->imageValues;
+    }
+
+    public function addImageValue(ProductAttributeValueImage $imageValue): static
+    {
+        if (!$this->imageValues->contains($imageValue)) {
+            $this->imageValues->add($imageValue);
+            $imageValue->setSku($this);
+        }
+
+        return $this;
+    }
+
+    public function removeImageValue(ProductAttributeValueImage $imageValue): static
+    {
+        if ($this->imageValues->removeElement($imageValue)) {
+            // set the owning side to null (unless already changed)
+            if ($imageValue->getSku() === $this) {
+                $imageValue->setSku(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductAttributeValueDecimal>
+     */
+    public function getDecimalValues(): Collection
+    {
+        return $this->decimalValues;
+    }
+
+    public function addDecimalValue(ProductAttributeValueDecimal $decimalValue): static
+    {
+        if (!$this->decimalValues->contains($decimalValue)) {
+            $this->decimalValues->add($decimalValue);
+            $decimalValue->setSku($this);
+        }
+
+        return $this;
+    }
+
+    public function removeDecimalValue(ProductAttributeValueDecimal $decimalValue): static
+    {
+        if ($this->decimalValues->removeElement($decimalValue)) {
+            // set the owning side to null (unless already changed)
+            if ($decimalValue->getSku() === $this) {
+                $decimalValue->setSku(null);
             }
         }
 
