@@ -5,6 +5,7 @@ namespace App\Form\Attribute\Handler;
 
 use App\Entity\Product;
 use App\Entity\ProductAttribute;
+use App\Entity\ProductAttributeFactory;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormInterface;
@@ -12,7 +13,8 @@ use Symfony\Component\Form\FormInterface;
 abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInterface
 {
     public function __construct(
-        protected EntityManagerInterface $em
+        protected EntityManagerInterface $em,
+        protected ProductAttributeFactory $attributeFactory
     ) {
     }
 
@@ -30,7 +32,7 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
     : void {
         if ($product) {
             $existing = $this->findExisting($product, $attribute);
-            $builder->add($attribute->getCode(), TextareaType::class, [
+            $builder->add($attribute->getCode(), $this->getFormType(), [
                 'label'    => $attribute->getName(),
                 'required' => false,
                 'mapped'   => false,
@@ -39,8 +41,8 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
         }
     }
 
-    public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product)
-    : void {
+    public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product): void
+    {
         $fieldName = $attribute->getCode();
 
         if (!$builder->has($fieldName)) {
@@ -49,11 +51,13 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
 
         $value = $builder->get($fieldName)->getData();
 
-        if ($value === null || $value === '') {
+        $existing = $this->findExisting($product, $attribute);
+
+        $normalized = $this->normalizeValue($value, $existing, $product);
+
+        if ($normalized === null) {
             return;
         }
-
-        $existing = $this->findExisting($product, $attribute);
 
         if (!$existing) {
             $existing = $this->createEntity();
@@ -63,7 +67,7 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
             $this->getCollection($product)->add($existing);
         }
 
-        $existing->setValue($value);
+        $existing->setValue($normalized);
     }
 
     protected function findExisting(Product $product, ProductAttribute $attribute)
@@ -77,7 +81,7 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
         return null;
     }
 
-    protected function normalizeValue($value)
+    protected function normalizeValue($value, $existing = null, Product $product = null)
     {
         return $value;
     }

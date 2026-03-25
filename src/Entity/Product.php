@@ -32,13 +32,13 @@ class Product
     /**
      * @var Collection<int, ProductAttributeValueInt>
      */
-    #[ORM\OneToMany(targetEntity: ProductAttributeValueInt::class, mappedBy: 'product', orphanRemoval: true)]
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueInt::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
     private Collection $intValues;
 
     /**
      * @var Collection<int, ProductAttributeValueImage>
      */
-    #[ORM\OneToMany(targetEntity: ProductAttributeValueImage::class, mappedBy: 'product')]
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueImage::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
     private Collection $imageValues;
 
     public function __construct()

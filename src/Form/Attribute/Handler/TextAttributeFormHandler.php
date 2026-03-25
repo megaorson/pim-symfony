@@ -11,7 +11,7 @@ class TextAttributeFormHandler extends AbstractAttributeFormHandler
 {
     public function supports(string $type)
     : bool {
-        return $type === 'text';
+        return $type === ProductAttributeValueText::TYPE;
     }
 
     protected function getFormType()
@@ -22,7 +22,7 @@ class TextAttributeFormHandler extends AbstractAttributeFormHandler
 
     protected function createEntity()
     {
-        return new ProductAttributeValueText();
+        return $this->attributeFactory->create(ProductAttributeValueText::TYPE);
     }
 
     protected function getCollection(Product $product)
@@ -30,7 +30,7 @@ class TextAttributeFormHandler extends AbstractAttributeFormHandler
         return $product->getTextValues();
     }
 
-    protected function normalizeValue($value)
+    protected function normalizeValue($value, $existing = null, Product $product = null)
     {
         return (string)$value;
     }

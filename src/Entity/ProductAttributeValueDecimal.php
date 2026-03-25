@@ -7,8 +7,10 @@ use App\Repository\ProductAttributeValueDecimalRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductAttributeValueDecimalRepository::class)]
-class ProductAttributeValueDecimal
+class ProductAttributeValueDecimal extends ProductAttributeValueAbstract
 {
+    public const TYPE = 'decimal';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

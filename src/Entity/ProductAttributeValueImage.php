@@ -7,8 +7,10 @@ use App\Repository\ProductAttributeValueImageRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductAttributeValueImageRepository::class)]
-class ProductAttributeValueImage
+class ProductAttributeValueImage extends ProductAttributeValueAbstract
 {
+    public const TYPE = 'image';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

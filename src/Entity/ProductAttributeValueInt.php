@@ -7,8 +7,10 @@ use App\Repository\ProductAttributeValueIntRepository;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductAttributeValueIntRepository::class)]
-class ProductAttributeValueInt
+class ProductAttributeValueInt extends ProductAttributeValueAbstract
 {
+    public const TYPE = 'int';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

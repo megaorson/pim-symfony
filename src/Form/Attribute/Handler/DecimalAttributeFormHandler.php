@@ -11,7 +11,7 @@ class DecimalAttributeFormHandler extends AbstractAttributeFormHandler
 {
     public function supports(string $type)
     : bool {
-        return $type === 'decimal';
+        return $type === ProductAttributeValueDecimal::TYPE;
     }
 
     protected function getFormType()
@@ -22,7 +22,7 @@ class DecimalAttributeFormHandler extends AbstractAttributeFormHandler
 
     protected function createEntity()
     {
-        return new ProductAttributeValueDecimal();
+        return $this->attributeFactory->create(ProductAttributeValueDecimal::TYPE);
     }
 
     protected function getCollection(Product $product)
@@ -30,7 +30,7 @@ class DecimalAttributeFormHandler extends AbstractAttributeFormHandler
         return $product->getDecimalValues();
     }
 
-    protected function normalizeValue($value)
+    protected function normalizeValue($value, $existing = null, Product $product = null)
     {
         return $value !== null ? (float)$value : null;
     }

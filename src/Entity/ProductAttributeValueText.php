@@ -8,8 +8,10 @@ use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductAttributeValueTextRepository::class)]
-class ProductAttributeValueText
+class ProductAttributeValueText extends ProductAttributeValueAbstract
 {
+    public const TYPE = 'text';
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]

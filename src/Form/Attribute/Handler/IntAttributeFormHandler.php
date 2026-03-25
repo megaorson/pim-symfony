@@ -11,7 +11,7 @@ class IntAttributeFormHandler extends AbstractAttributeFormHandler
 {
     public function supports(string $type)
     : bool {
-        return $type === 'int';
+        return $type === ProductAttributeValueInt::TYPE;
     }
 
     protected function getFormType()
@@ -22,7 +22,7 @@ class IntAttributeFormHandler extends AbstractAttributeFormHandler
 
     protected function createEntity()
     {
-        return new ProductAttributeValueInt();
+        return $this->attributeFactory->create(ProductAttributeValueInt::TYPE);
     }
 
     protected function getCollection(Product $product)
@@ -30,7 +30,7 @@ class IntAttributeFormHandler extends AbstractAttributeFormHandler
         return $product->getIntValues();
     }
 
-    protected function normalizeValue($value)
+    protected function normalizeValue($value, $existing = null, Product $product = null)
     {
         return (int)$value;
     }

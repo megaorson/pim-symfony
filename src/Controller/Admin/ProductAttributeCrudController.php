@@ -6,12 +6,18 @@ namespace App\Controller\Admin;
 use App\Attribute\AttributeHandlerRegistry;
 use App\Attribute\AttributeTypeHandlerInterface;
 use App\Entity\ProductAttribute;
+use App\Entity\ProductAttributeFactory;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 
 class ProductAttributeCrudController extends AbstractCrudController
 {
+    public function __construct(
+        protected ProductAttributeFactory $attributeFactory
+    ) {
+    }
+
     public static function getEntityFqcn()
     : string
     {
@@ -25,12 +31,7 @@ class ProductAttributeCrudController extends AbstractCrudController
             TextField::new('name'),
 
             ChoiceField::new('type')
-                ->setChoices([
-                    'Text'    => 'text',
-                    'Decimal' => 'decimal',
-                    'Image'   => 'image',
-                    'Integer' => 'int',
-                ]),
+                ->setChoices($this->getAvailableTypes()),
         ];
     }
 
@@ -38,6 +39,9 @@ class ProductAttributeCrudController extends AbstractCrudController
     : array
     {
         $response = [];
+        foreach ($this->attributeFactory->getAttributes() as $type => $attribute) {
+            $response[ucfirst($type)] = $type;
+        }
 
         return $response;
     }
