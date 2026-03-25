@@ -17,116 +17,185 @@ class Product
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 255)]
-    private ?string $name = null;
+    #[ORM\Column(length: 100)]
+    private ?string $sku = null;
 
-    #[ORM\Column(type: Types::TEXT, nullable: true)]
-    private ?string $description = null;
+    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductAttributeValueDecimal::class, cascade: ['persist'], orphanRemoval: true)]
+    private Collection $decimalValues;
 
     /**
-     * @var Collection<int, Sku>
+     * @var Collection<int, ProductAttributeValueText>
      */
-    #[ORM\OneToMany(targetEntity: Sku::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
-    private Collection $skus;
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueText::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
+    private Collection $textValues;
+
+    /**
+     * @var Collection<int, ProductAttributeValueInt>
+     */
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueInt::class, mappedBy: 'product', orphanRemoval: true)]
+    private Collection $intValues;
+
+    /**
+     * @var Collection<int, ProductAttributeValueImage>
+     */
+    #[ORM\OneToMany(targetEntity: ProductAttributeValueImage::class, mappedBy: 'product')]
+    private Collection $imageValues;
 
     public function __construct()
     {
-        $this->skus = new ArrayCollection();
+        $this->decimalValues = new ArrayCollection();
+        $this->textValues = new ArrayCollection();
+        $this->intValues = new ArrayCollection();
+        $this->imageValues = new ArrayCollection();
+    }
+
+    public function getAttributes()
+    : array
+    {
+        return [];
     }
 
     /**
      * Retrieves the ID.
      * @return int|null The ID value or null if not set.
      */
-    public function getId(): ?int
+    public function getId()
+    : ?int
     {
         return $this->id;
     }
 
-    /**
-     * Retrieves the name.
-     * @return string|null The name value or null if not set.
-     */
-    public function getName(): ?string
+    public function getSku()
+    : ?string
     {
-        return $this->name;
+        return $this->sku;
     }
 
-    /**
-     * Sets the name property.
-     *
-     * @param string $name The name to set.
-     *
-     * @return static Returns the current instance for method chaining.
-     */
-    public function setName(string $name): static
-    {
-        $this->name = $name;
+    public function setSku(string $sku)
+    : static {
+        $this->sku = $sku;
 
         return $this;
     }
 
     /**
-     * Retrieves the description property.
-     * @return string|null Returns the description or null if not set.
+     * @return Collection<int, ProductAttributeValueDecimal>
      */
-    public function getDescription(): ?string
+    public function getDecimalValues()
+    : Collection
     {
-        return $this->description;
+        return $this->decimalValues;
     }
 
-    /**
-     * Sets the description property.
-     *
-     * @param string|null $description The description to set or null to unset.
-     *
-     * @return static Returns the current instance for method chaining.
-     */
-    public function setDescription(?string $description): static
-    {
-        $this->description = $description;
+    public function addDecimalValue(ProductAttributeValueDecimal $productAttributeValueDecimal)
+    : static {
+        if (!$this->decimalValues->contains($productAttributeValueDecimal)) {
+            $this->decimalValues->add($productAttributeValueDecimal);
+            $productAttributeValueDecimal->setProduct($this);
+        }
 
         return $this;
     }
 
-    /**
-     * @return Collection<int, Sku>
-     */
-    public function getSkus(): Collection
-    {
-        return $this->skus;
-    }
-
-    /**
-     * Adds a SKU to the collection if it does not already exist.
-     *
-     * @param Sku $sku The SKU to be added.
-     *
-     * @return static Returns the current instance for method chaining.
-     */
-    public function addSku(Sku $sku): static
-    {
-        if (!$this->skus->contains($sku)) {
-            $this->skus->add($sku);
-            $sku->setProduct($this);
+    public function removeDecimalValue(ProductAttributeValueDecimal $productAttributeValueDecimal)
+    : static {
+        if ($this->decimalValues->removeElement($productAttributeValueDecimal)) {
+            // set the owning side to null (unless already changed)
+            if ($productAttributeValueDecimal->getProduct() === $this) {
+                $productAttributeValueDecimal->setProduct(null);
+            }
         }
 
         return $this;
     }
 
     /**
-     * Removes a SKU from the collection if it exists.
-     *
-     * @param Sku $sku The SKU to be removed.
-     *
-     * @return static Returns the current instance for method chaining.
+     * @return Collection<int, ProductAttributeValueText>
      */
-    public function removeSku(Sku $sku): static
+    public function getTextValues()
+    : Collection
     {
-        if ($this->skus->removeElement($sku)) {
+        return $this->textValues;
+    }
+
+    public function addTextValue(ProductAttributeValueText $textValue)
+    : static {
+        if (!$this->textValues->contains($textValue)) {
+            $this->textValues->add($textValue);
+            $textValue->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeTextValue(ProductAttributeValueText $textValue)
+    : static {
+        if ($this->textValues->removeElement($textValue)) {
             // set the owning side to null (unless already changed)
-            if ($sku->getProduct() === $this) {
-                $sku->setProduct(null);
+            if ($textValue->getProduct() === $this) {
+                $textValue->setProduct(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductAttributeValueInt>
+     */
+    public function getIntValues()
+    : Collection
+    {
+        return $this->intValues;
+    }
+
+    public function addIntValue(ProductAttributeValueInt $intValue)
+    : static {
+        if (!$this->intValues->contains($intValue)) {
+            $this->intValues->add($intValue);
+            $intValue->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeIntValue(ProductAttributeValueInt $intValue)
+    : static {
+        if ($this->intValues->removeElement($intValue)) {
+            // set the owning side to null (unless already changed)
+            if ($intValue->getProduct() === $this) {
+                $intValue->setProduct(null);
+            }
+        }
+
+        return $this;
+    }
+
+    /**
+     * @return Collection<int, ProductAttributeValueImage>
+     */
+    public function getImageValues()
+    : Collection
+    {
+        return $this->imageValues;
+    }
+
+    public function addImageValue(ProductAttributeValueImage $imageValue)
+    : static {
+        if (!$this->imageValues->contains($imageValue)) {
+            $this->imageValues->add($imageValue);
+            $imageValue->setProduct($this);
+        }
+
+        return $this;
+    }
+
+    public function removeImageValue(ProductAttributeValueImage $imageValue)
+    : static {
+        if ($this->imageValues->removeElement($imageValue)) {
+            // set the owning side to null (unless already changed)
+            if ($imageValue->getProduct() === $this) {
+                $imageValue->setProduct(null);
             }
         }
 

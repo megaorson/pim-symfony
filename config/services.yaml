@@ -19,5 +19,13 @@ services:
     App\:
         resource: '../src/'
 
+    App\Form\Attribute\Handler\:
+        resource: '../src/Form/Attribute/Handler/'
+        tags: ['app.attribute_form_handler']
+
+    App\Form\Attribute\AttributeFormRegistry:
+        arguments:
+            $handlers: !tagged_iterator app.attribute_form_handler
+
     # add more service definitions when explicit configuration is needed
     # please note that last definitions always *replace* previous ones

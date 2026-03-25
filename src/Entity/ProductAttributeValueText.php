@@ -1,4 +1,5 @@
 <?php
+declare(strict_types=1);
 
 namespace App\Entity;
 
@@ -17,51 +18,55 @@ class ProductAttributeValueText
     #[ORM\Column(type: Types::TEXT, nullable: true)]
     private ?string $value = null;
 
-    #[ORM\ManyToOne(inversedBy: 'textValues')]
-    #[ORM\JoinColumn(nullable: false)]
-    private ?Sku $sku = null;
-
     #[ORM\ManyToOne]
     #[ORM\JoinColumn(nullable: false)]
     private ?ProductAttribute $attribute = null;
 
-    public function getId(): ?int
+    #[ORM\ManyToOne(inversedBy: 'textValues')]
+    #[ORM\JoinColumn(nullable: false)]
+    private ?Product $product = null;
+
+    public function getId()
+    : ?int
     {
         return $this->id;
     }
 
-    public function getValue(): ?string
+    public function getValue()
+    : ?string
     {
         return $this->value;
     }
 
-    public function setValue(?string $value): static
-    {
+    public function setValue(?string $value)
+    : static {
         $this->value = $value;
 
         return $this;
     }
 
-    public function getSku(): ?Sku
-    {
-        return $this->sku;
-    }
-
-    public function setSku(?Sku $sku): static
-    {
-        $this->sku = $sku;
-
-        return $this;
-    }
-
-    public function getProductAttribute(): ?ProductAttribute
+    public function getAttribute()
+    : ?ProductAttribute
     {
         return $this->attribute;
     }
 
-    public function setProductAttribute(?ProductAttribute $productAttribute): static
-    {
+    public function setAttribute(?ProductAttribute $productAttribute)
+    : static {
         $this->attribute = $productAttribute;
+
+        return $this;
+    }
+
+    public function getProduct()
+    : ?Product
+    {
+        return $this->product;
+    }
+
+    public function setProduct(?Product $product)
+    : static {
+        $this->product = $product;
 
         return $this;
     }
