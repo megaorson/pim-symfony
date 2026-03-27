@@ -3,13 +3,53 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\DTO\ProductCollectionOutput;
+use App\DTO\ProductOutput;
 use App\Repository\ProductRepository;
+use App\State\ProductProcessor;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
-use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
+use ApiPlatform\Metadata\ApiResource;
+use ApiPlatform\Metadata\Get;
+use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\Post;
+use App\Dto\ProductInput;
+use App\State\ProductProvider;
+use ApiPlatform\OpenApi\Model\Operation;
+use ApiPlatform\OpenApi\Model\Parameter;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
+#[ApiResource(
+    operations: [
+        new Get(
+            provider: ProductProvider::class,
+            output: ProductOutput::class
+        ),
+        new GetCollection(
+            provider: ProductProvider::class,
+            output: ProductCollectionOutput::class,
+            openapi: new Operation(
+                parameters: [
+                    new Parameter(
+                        name: 'page',
+                        in: 'query',
+                        schema: ['type' => 'integer', 'default' => 1]
+                    ),
+                    new Parameter(
+                        name: 'limit',
+                        in: 'query',
+                        schema: ['type' => 'integer', 'default' => 10]
+                    )
+                ]
+            )
+        ),
+        new Post(
+            input: ProductInput::class,
+            processor: ProductProcessor::class
+        )
+    ]
+)]
 class Product
 {
     #[ORM\Id]
@@ -53,6 +93,16 @@ class Product
     : array
     {
         return [];
+    }
+
+    public function getAllAttributeValues(): array
+    {
+        return array_merge(
+            $this->textValues?->toArray() ?? [],
+            $this->intValues?->toArray() ?? [],
+            $this->decimalValues?->toArray() ?? [],
+            $this->imageValues?->toArray() ?? []
+        );
     }
 
     /**

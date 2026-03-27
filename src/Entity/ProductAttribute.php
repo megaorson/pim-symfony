@@ -4,11 +4,14 @@ declare(strict_types=1);
 namespace App\Entity;
 
 use App\Repository\ProductAttributeRepository;
-use Doctrine\Common\Collections\ArrayCollection;
-use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
+use ApiPlatform\Metadata\ApiResource;
+
 #[ORM\Entity(repositoryClass: ProductAttributeRepository::class)]
+#[ApiResource(
+    description: 'List of available product attributes',
+)]
 class ProductAttribute
 {
     #[ORM\Id]
