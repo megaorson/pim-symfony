@@ -26,24 +26,24 @@ class ProductType extends AbstractType
 
         $builder->addEventListener(
             FormEvents::PRE_SET_DATA, function (FormEvent $event) use ($attributeFormRegistry, $attributeRepository)
-        {
-            $attributeFormRegistry->build(
-                $event->getForm(),
-                $attributeRepository->findAll(),
-                $event->getForm()->getParent()?->getData()
-            );
-        }
+            {
+                $attributeFormRegistry->build(
+                    $event->getForm(),
+                    $attributeRepository->findAll(),
+                    $event->getForm()->getParent()?->getData()
+                );
+            }
         );
 
         $builder->addEventListener(
             FormEvents::POST_SUBMIT, function (FormEvent $event) use ($attributeFormRegistry, $attributeRepository)
-        {
-            $attributeFormRegistry->handleSubmit(
-                $event->getForm(),
-                $attributeRepository->findAll(),
-                $event->getForm()->getParent()->getData()
-            );
-        }
+            {
+                $attributeFormRegistry->handleSubmit(
+                    $event->getForm(),
+                    $attributeRepository->findAll(),
+                    $event->getForm()->getParent()->getData()
+                );
+            }
         );
     }
 

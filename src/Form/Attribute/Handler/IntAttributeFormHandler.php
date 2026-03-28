@@ -9,20 +9,10 @@ use App\Entity\ProductAttributeValueInt;
 
 class IntAttributeFormHandler extends AbstractAttributeFormHandler
 {
-    public function supports(string $type)
-    : bool {
-        return $type === ProductAttributeValueInt::TYPE;
-    }
-
     protected function getFormType()
     : string
     {
         return IntegerType::class;
-    }
-
-    protected function createEntity()
-    {
-        return $this->attributeFactory->create(ProductAttributeValueInt::TYPE);
     }
 
     protected function getCollection(Product $product)
@@ -33,5 +23,11 @@ class IntAttributeFormHandler extends AbstractAttributeFormHandler
     protected function normalizeValue($value, $existing = null, Product $product = null)
     {
         return (int)$value;
+    }
+
+    protected function getAttributeType()
+    : string
+    {
+        return ProductAttributeValueInt::TYPE;
     }
 }

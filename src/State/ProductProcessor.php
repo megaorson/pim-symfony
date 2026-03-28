@@ -6,19 +6,22 @@ namespace App\State;
 use ApiPlatform\State\ProcessorInterface;
 use App\Dto\ProductInput;
 use App\Entity\Product;
-use App\Entity\ProductAttribute;
-use App\Entity\ProductAttributeValueText;
-use App\Entity\ProductAttributeValueDecimal;
-use App\Entity\ProductAttributeValueInt;
-use App\Entity\ProductAttributeValueImage;
-use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\ProductAttributeFactory;
 use ApiPlatform\Metadata\Operation;
+use App\Repository\ProductAttributeRepository;
+use App\Repository\ProductRepository;
+use Doctrine\ORM\EntityManagerInterface;
 
-class ProductProcessor implements ProcessorInterface
+class ProductProcessor extends AbstractProduct implements ProcessorInterface
 {
     public function __construct(
-        private EntityManagerInterface $em
-    ) {}
+        EntityManagerInterface $em,
+        ProductRepository $productRepository,
+        private ProductAttributeRepository $productAttributeRepository,
+        private ProductAttributeFactory $productAttributeFactory
+    ) {
+        parent::__construct($em, $productRepository);
+    }
 
     public function process(
         mixed $data,
@@ -28,20 +31,18 @@ class ProductProcessor implements ProcessorInterface
     ): Product
     {
         /** @var ProductInput $data */
-
         $product = new Product();
         $product->setSku($data->sku);
 
         foreach ($data->attributes as $code => $value) {
-
-            $attribute = $this->em->getRepository(ProductAttribute::class)
-                ->findOneBy(['code' => $code]);
+            $attribute = $this->productAttributeRepository->findOneBy(['code' => $code]);
 
             if (!$attribute) {
                 throw new \Exception("Attribute {$code} not found");
             }
 
-            $valueEntity = $this->createValueEntity($attribute->getType(), $value);
+            $valueEntity = $this->productAttributeFactory->create($attribute->getType());
+            $valueEntity->setValue($value);
 
             $valueEntity->setAttribute($attribute);
             $valueEntity->setProduct($product);
@@ -53,16 +54,5 @@ class ProductProcessor implements ProcessorInterface
         $this->em->flush();
 
         return $product;
-    }
-
-    private function createValueEntity(string $type, mixed $value)
-    {
-        return match ($type) {
-            'text' => (new ProductAttributeValueText())->setValue((string)$value),
-            'decimal' => (new ProductAttributeValueDecimal())->setValue((float)$value),
-            'int' => (new ProductAttributeValueInt())->setValue((int)$value),
-            'image' => (new ProductAttributeValueImage())->setValue((string)$value),
-            default => throw new \Exception("Unknown type {$type}")
-        };
     }
 }

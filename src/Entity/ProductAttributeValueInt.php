@@ -39,9 +39,9 @@ class ProductAttributeValueInt extends ProductAttributeValueAbstract
         return $this->value;
     }
 
-    public function setValue(int $value)
+    public function setValue($value)
     : static {
-        $this->value = $value;
+        $this->value = (int)$value;
 
         return $this;
     }

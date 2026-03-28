@@ -39,9 +39,9 @@ class ProductAttributeValueDecimal extends ProductAttributeValueAbstract
         return $this->value;
     }
 
-    public function setValue(float $value)
+    public function setValue($value)
     : static {
-        $this->value = $value;
+        $this->value = (float)$value;
 
         return $this;
     }

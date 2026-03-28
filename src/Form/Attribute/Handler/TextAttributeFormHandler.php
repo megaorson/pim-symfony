@@ -9,20 +9,10 @@ use App\Entity\ProductAttributeValueText;
 
 class TextAttributeFormHandler extends AbstractAttributeFormHandler
 {
-    public function supports(string $type)
-    : bool {
-        return $type === ProductAttributeValueText::TYPE;
-    }
-
     protected function getFormType()
     : string
     {
         return TextareaType::class;
-    }
-
-    protected function createEntity()
-    {
-        return $this->attributeFactory->create(ProductAttributeValueText::TYPE);
     }
 
     protected function getCollection(Product $product)
@@ -33,5 +23,11 @@ class TextAttributeFormHandler extends AbstractAttributeFormHandler
     protected function normalizeValue($value, $existing = null, Product $product = null)
     {
         return (string)$value;
+    }
+
+    protected function getAttributeType()
+    : string
+    {
+        return ProductAttributeValueText::TYPE;
     }
 }

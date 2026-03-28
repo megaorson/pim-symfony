@@ -6,9 +6,8 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Entity\Product;
-use App\DTO\ProductOutput;
 
-class ProductOutputProcessor implements ProcessorInterface
+class ProductOutputProcessor extends AbstractProduct implements ProcessorInterface
 {
     public function process(
         mixed $data,
@@ -31,18 +30,5 @@ class ProductOutputProcessor implements ProcessorInterface
         }
 
         return $data;
-    }
-
-    private function transform(Product $product): ProductOutput
-    {
-        $dto = new ProductOutput();
-        $dto->id = $product->getId();
-        $dto->sku = $product->getSku();
-
-        foreach ($product->getAllAttributeValues() as $value) {
-            $dto->attributes[$value->getAttribute()->getCode()] = $value->getValue();
-        }
-
-        return $dto;
     }
 }

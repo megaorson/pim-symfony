@@ -27,11 +27,6 @@ class ImageAttributeFormHandler extends AbstractAttributeFormHandler
         $this->uploadDir = $uploadDir;
     }
 
-    public function supports(string $type)
-    : bool {
-        return $type === ProductAttributeValueImage::TYPE;
-    }
-
     protected function getFormType()
     : string
     {
@@ -89,11 +84,6 @@ class ImageAttributeFormHandler extends AbstractAttributeFormHandler
         }
     }
 
-    protected function createEntity()
-    {
-        return $this->attributeFactory->create(ProductAttributeValueImage::TYPE);
-    }
-
     protected function getCollection(Product $product)
     {
         return $product->getImageValues();
@@ -122,5 +112,11 @@ class ImageAttributeFormHandler extends AbstractAttributeFormHandler
         $this->processFiles($fileName, $value, $existing);
 
         return $fileName;
+    }
+
+    protected function getAttributeType()
+    : string
+    {
+        return ProductAttributeValueImage::TYPE;
     }
 }

@@ -9,20 +9,10 @@ use App\Entity\ProductAttributeValueDecimal;
 
 class DecimalAttributeFormHandler extends AbstractAttributeFormHandler
 {
-    public function supports(string $type)
-    : bool {
-        return $type === ProductAttributeValueDecimal::TYPE;
-    }
-
     protected function getFormType()
     : string
     {
         return NumberType::class;
-    }
-
-    protected function createEntity()
-    {
-        return $this->attributeFactory->create(ProductAttributeValueDecimal::TYPE);
     }
 
     protected function getCollection(Product $product)
@@ -33,5 +23,11 @@ class DecimalAttributeFormHandler extends AbstractAttributeFormHandler
     protected function normalizeValue($value, $existing = null, Product $product = null)
     {
         return $value !== null ? (float)$value : null;
+    }
+
+    protected function getAttributeType()
+    : string
+    {
+        return ProductAttributeValueDecimal::TYPE;
     }
 }

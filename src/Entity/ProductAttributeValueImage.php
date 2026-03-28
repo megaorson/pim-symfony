@@ -38,9 +38,9 @@ class ProductAttributeValueImage extends ProductAttributeValueAbstract
         return $this->value;
     }
 
-    public function setValue(string $value)
+    public function setValue($value)
     : static {
-        $this->value = $value;
+        $this->value = (string)$value;
 
         return $this;
     }

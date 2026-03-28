@@ -16,6 +16,7 @@ use ApiPlatform\Metadata\GetCollection;
 use ApiPlatform\Metadata\Post;
 use App\Dto\ProductInput;
 use App\State\ProductProvider;
+use App\State\ProductCollectionProvider;
 use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\Parameter;
 
@@ -27,7 +28,7 @@ use ApiPlatform\OpenApi\Model\Parameter;
             output: ProductOutput::class
         ),
         new GetCollection(
-            provider: ProductProvider::class,
+            provider: ProductCollectionProvider::class,
             output: ProductCollectionOutput::class,
             openapi: new Operation(
                 parameters: [

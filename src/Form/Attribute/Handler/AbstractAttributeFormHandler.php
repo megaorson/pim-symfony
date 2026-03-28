@@ -6,25 +6,34 @@ namespace App\Form\Attribute\Handler;
 use App\Entity\Product;
 use App\Entity\ProductAttribute;
 use App\Entity\ProductAttributeFactory;
+use App\Entity\ProductAttributeTypeInterface;
 use Doctrine\ORM\EntityManagerInterface;
-use Symfony\Component\Form\Extension\Core\Type\TextareaType;
 use Symfony\Component\Form\FormInterface;
 
 abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInterface
 {
     public function __construct(
-        protected EntityManagerInterface $em,
+        protected EntityManagerInterface  $em,
         protected ProductAttributeFactory $attributeFactory
     ) {
     }
 
-    abstract public function supports(string $type)
-    : bool;
+    public function supports(string $type)
+    : bool {
+        return $type === $this->getAttributeType();
+    }
 
     abstract protected function getFormType()
     : string;
 
-    abstract protected function createEntity();
+    abstract protected function getAttributeType()
+    : string;
+
+    protected function createEntity()
+    : ProductAttributeTypeInterface
+    {
+        return $this->attributeFactory->create($this::getAttributeType());
+    }
 
     abstract protected function getCollection(Product $product);
 
@@ -41,8 +50,8 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
         }
     }
 
-    public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product): void
-    {
+    public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product)
+    : void {
         $fieldName = $attribute->getCode();
 
         if (!$builder->has($fieldName)) {
