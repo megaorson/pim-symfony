@@ -3,10 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Attribute\AttributeHandlerRegistry;
-use App\Attribute\AttributeTypeHandlerInterface;
 use App\Entity\ProductAttribute;
-use App\Entity\ProductAttributeFactory;
+use App\Service\Eav\AttributeTypeRegistry;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
@@ -14,7 +12,7 @@ use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
 class ProductAttributeCrudController extends AbstractCrudController
 {
     public function __construct(
-        protected ProductAttributeFactory $attributeFactory
+        protected AttributeTypeRegistry $attributeTypeRegistry
     ) {
     }
 
@@ -39,7 +37,7 @@ class ProductAttributeCrudController extends AbstractCrudController
     : array
     {
         $response = [];
-        foreach ($this->attributeFactory->getAttributes() as $type => $attribute) {
+        foreach ($this->attributeTypeRegistry->all() as $type => $attribute) {
             $response[ucfirst($type)] = $type;
         }
 

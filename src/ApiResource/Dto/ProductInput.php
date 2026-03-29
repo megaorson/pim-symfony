@@ -1,9 +1,9 @@
 <?php
 declare(strict_types=1);
 
-namespace App\DTO;
+namespace App\ApiResource\Dto;
 
-class ProductInput
+final class ProductInput
 {
     public string $sku;
 

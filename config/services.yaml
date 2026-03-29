@@ -1,36 +1,25 @@
 # yaml-language-server: $schema=../vendor/symfony/dependency-injection/Loader/schema/services.schema.json
 
-# This file is the entry point to configure your own services.
-# Files in the packages/ subdirectory configure your dependencies.
-# See also https://symfony.com/doc/current/service_container/import.html
-
-# Put parameters here that don't need to change on each machine where the app is deployed
-# https://symfony.com/doc/current/best_practices.html#use-parameters-for-application-configuration
 parameters:
     upload_dir: '%kernel.project_dir%/public/uploads/images'
 
-services:
-    # default configuration for services in *this* file
-    _defaults:
-        autowire: true      # Automatically injects dependencies in your services.
-        autoconfigure: true # Automatically registers your services as commands, event subscribers, etc.
+    app.eav_value_entity_map:
+        !php/const App\Entity\ProductAttributeValueText::TYPE: 'App\Entity\ProductAttributeValueText'
+        !php/const App\Entity\ProductAttributeValueInt::TYPE: 'App\Entity\ProductAttributeValueInt'
+        !php/const App\Entity\ProductAttributeValueImage::TYPE: 'App\Entity\ProductAttributeValueImage'
+        !php/const App\Entity\ProductAttributeValueDecimal::TYPE: 'App\Entity\ProductAttributeValueDecimal'
 
-    # makes classes in src/ available to be used as services
-    # this creates a service per class whose id is the fully-qualified class name
+services:
+    _defaults:
+        autowire: true
+        autoconfigure: true
+
     App\:
         resource: '../src/'
 
     App\Form\Attribute\Handler\:
         resource: '../src/Form/Attribute/Handler/'
         tags: ['app.attribute_form_handler']
-
-    App\Entity\ProductAttributeFactory:
-        arguments:
-            $attributes:
-                !php/const App\Entity\ProductAttributeValueText::TYPE: 'App\Entity\ProductAttributeValueText'
-                !php/const App\Entity\ProductAttributeValueInt::TYPE: 'App\Entity\ProductAttributeValueInt'
-                !php/const App\Entity\ProductAttributeValueImage::TYPE: 'App\Entity\ProductAttributeValueImage'
-                !php/const App\Entity\ProductAttributeValueDecimal::TYPE: 'App\Entity\ProductAttributeValueDecimal'
 
     App\Form\Attribute\Handler\ImageAttributeFormHandler:
         tags: ['app.attribute_form_handler']
@@ -41,7 +30,11 @@ services:
         arguments:
             $handlers: !tagged_iterator app.attribute_form_handler
 
+    App\Service\Eav\AttributeTypeRegistry:
+        arguments:
+            $valueEntityMap: '%app.eav_value_entity_map%'
 
-
-    # add more service definitions when explicit configuration is needed
-    # please note that last definitions always *replace* previous ones
+    App\ApiResource\OpenApi\OpenApiFactory:
+        decorates: 'api_platform.openapi.factory'
+        arguments:
+            $decorated: '@App\ApiResource\OpenApi\OpenApiFactory.inner'

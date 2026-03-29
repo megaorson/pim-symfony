@@ -5,7 +5,7 @@ namespace App\Form\Attribute\Handler;
 
 use App\Entity\Product;
 use App\Entity\ProductAttribute;
-use App\Entity\ProductAttributeFactory;
+use App\Service\Eav\AttributeTypeRegistry;
 use App\Entity\ProductAttributeTypeInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormInterface;
@@ -14,7 +14,7 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
 {
     public function __construct(
         protected EntityManagerInterface  $em,
-        protected ProductAttributeFactory $attributeFactory
+        protected AttributeTypeRegistry $attributeTypeRegistry
     ) {
     }
 
@@ -32,7 +32,7 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
     protected function createEntity()
     : ProductAttributeTypeInterface
     {
-        return $this->attributeFactory->create($this::getAttributeType());
+        return $this->attributeTypeRegistry->create($this::getAttributeType());
     }
 
     abstract protected function getCollection(Product $product);

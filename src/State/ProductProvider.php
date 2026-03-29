@@ -3,8 +3,8 @@ declare(strict_types=1);
 
 namespace App\State;
 
-use ApiPlatform\State\ProviderInterface;
 use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\ProviderInterface;
 
 class ProductProvider extends AbstractProduct implements ProviderInterface
 {

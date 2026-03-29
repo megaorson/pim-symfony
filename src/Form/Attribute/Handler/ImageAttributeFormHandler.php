@@ -4,7 +4,7 @@ declare(strict_types=1);
 namespace App\Form\Attribute\Handler;
 
 use App\Entity\ProductAttribute;
-use App\Entity\ProductAttributeFactory;
+use App\Service\Eav\AttributeTypeRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
 use App\Entity\Product;
@@ -19,11 +19,11 @@ class ImageAttributeFormHandler extends AbstractAttributeFormHandler
     protected string $uploadDir;
 
     public function __construct(
-        EntityManagerInterface            $em,
-        protected ProductAttributeFactory $attributeFactory,
-        string                            $uploadDir
+        EntityManagerInterface          $em,
+        protected AttributeTypeRegistry $attributeTypeRegistry,
+        string                          $uploadDir
     ) {
-        parent::__construct($em, $attributeFactory);
+        parent::__construct($em, $attributeTypeRegistry);
         $this->uploadDir = $uploadDir;
     }
 

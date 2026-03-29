@@ -3,13 +3,13 @@ declare(strict_types=1);
 
 namespace App\State;
 
-use ApiPlatform\State\ProcessorInterface;
-use App\Dto\ProductInput;
-use App\Entity\Product;
-use App\Entity\ProductAttributeFactory;
 use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\ProcessorInterface;
+use App\ApiResource\Dto\ProductInput;
+use App\Entity\Product;
 use App\Repository\ProductAttributeRepository;
 use App\Repository\ProductRepository;
+use App\Service\Eav\AttributeTypeRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 
 class ProductProcessor extends AbstractProduct implements ProcessorInterface
@@ -18,7 +18,7 @@ class ProductProcessor extends AbstractProduct implements ProcessorInterface
         EntityManagerInterface $em,
         ProductRepository $productRepository,
         private ProductAttributeRepository $productAttributeRepository,
-        private ProductAttributeFactory $productAttributeFactory
+        protected AttributeTypeRegistry $attributeTypeRegistry
     ) {
         parent::__construct($em, $productRepository);
     }
@@ -41,7 +41,7 @@ class ProductProcessor extends AbstractProduct implements ProcessorInterface
                 throw new \Exception("Attribute {$code} not found");
             }
 
-            $valueEntity = $this->productAttributeFactory->create($attribute->getType());
+            $valueEntity = $this->attributeTypeRegistry->create($attribute->getType());
             $valueEntity->setValue($value);
 
             $valueEntity->setAttribute($attribute);

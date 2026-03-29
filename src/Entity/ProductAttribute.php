@@ -6,12 +6,7 @@ namespace App\Entity;
 use App\Repository\ProductAttributeRepository;
 use Doctrine\ORM\Mapping as ORM;
 
-use ApiPlatform\Metadata\ApiResource;
-
 #[ORM\Entity(repositoryClass: ProductAttributeRepository::class)]
-#[ApiResource(
-    description: 'List of available product attributes',
-)]
 class ProductAttribute
 {
     #[ORM\Id]

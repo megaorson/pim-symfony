@@ -3,46 +3,77 @@ declare(strict_types=1);
 
 namespace App\State;
 
-use ApiPlatform\State\ProviderInterface;
 use ApiPlatform\Metadata\Operation;
-use App\DTO\ProductCollectionOutput;
+use ApiPlatform\State\ProviderInterface;
+use App\ApiResource\Dto\ProductCollectionOutput;
+use App\ApiResource\Dto\ProductOutput;
+use App\Entity\Product;
+use App\Repository\ProductRepository;
+use App\Service\Eav\Filter\SmartEavFilterApplier;
 
-class ProductCollectionProvider extends AbstractProduct implements ProviderInterface
+final class ProductCollectionProvider implements ProviderInterface
 {
-    public function provide(
-        Operation $operation,
-        array $uriVariables = [],
-        array $context = []
-    ): object|array|null {
+    public function __construct(
+        private ProductRepository $productRepository,
+        private SmartEavFilterApplier $smartEavFilterApplier,
+    ) {
+    }
+
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): ProductCollectionOutput
+    {
+        $qb = $this->productRepository->createQueryBuilder('p');
+
         $filters = $context['filters'] ?? [];
 
-        $page = isset($filters['page']) ? (int)$filters['page'] : 1;
-        $limit = isset($filters['limit']) ? (int)$filters['limit'] : 10;
+        $limit = isset($filters['limit']) ? max(1, (int) $filters['limit']) : 20;
+        $offset = isset($filters['offset']) ? max(0, (int) $filters['offset']) : 0;
+        $filterString = $filters['filter'] ?? null;
 
-        $offset = ($page - 1) * $limit;
+        if (is_string($filterString) && $filterString !== '') {
+            $this->smartEavFilterApplier->apply($qb, $filterString, 'p');
+        }
 
-        $qb = $this->productRepository
-            ->createQueryBuilder('p')
-            ->setFirstResult($offset)
-            ->setMaxResults($limit);
-
-        $products = $qb->getQuery()->getResult();
-
-        $totalItems = (int) $this->productRepository
-            ->createQueryBuilder('p')
-            ->select('COUNT(p.id)')
+        $countQb = clone $qb;
+        $total = (int) $countQb
+            ->select('COUNT(DISTINCT p.id)')
+            ->resetDQLPart('orderBy')
             ->getQuery()
             ->getSingleScalarResult();
 
-        $collectionDto = new ProductCollectionOutput();
-        $collectionDto->page = $page;
-        $collectionDto->limit = $limit;
-        $collectionDto->totalItems = $totalItems;
+        /** @var Product[] $products */
+        $products = $qb
+            ->setFirstResult($offset)
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
 
-        foreach ($products as $product) {
-            $collectionDto->items[] = $this->transform($product);
+        $items = array_map(
+            fn (Product $product) => $this->mapProductToOutput($product),
+            $products
+        );
+
+        return new ProductCollectionOutput(
+            items: $items,
+            total: $total,
+            limit: $limit,
+            offset: $offset,
+        );
+    }
+
+    private function mapProductToOutput(Product $product): ProductOutput
+    {
+        $attributes = [];
+
+        foreach ($product->getAllAttributeValues() as $value) {
+            $attributeCode = $value->getAttribute()->getCode();
+
+            $attributes[$attributeCode] = $value->getValue();
         }
 
-        return $collectionDto;
+        return new ProductOutput(
+            id: $product->getId(),
+            sku: $product->getSku(),
+            attributes: $attributes,
+        );
     }
 }
