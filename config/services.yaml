@@ -38,3 +38,20 @@ services:
         decorates: 'api_platform.openapi.factory'
         arguments:
             $decorated: '@App\ApiResource\OpenApi\OpenApiFactory.inner'
+
+    App\Service\Product\Collection\ProductSelectApplier:
+        tags:
+            - { name: 'app.product.collection_applier', priority: 300 }
+
+    App\Service\Eav\Filter\SmartEavFilterApplier:
+        tags:
+            - { name: 'app.product.collection_applier', priority: 200 }
+
+    App\Service\Product\Collection\ProductSortApplier:
+        tags:
+            - { name: 'app.product.collection_applier', priority: 100 }
+
+    App\State\ProductCollectionProvider:
+        arguments:
+            $collectionAppliers: !tagged_iterator
+                tag: 'app.product.collection_applier'

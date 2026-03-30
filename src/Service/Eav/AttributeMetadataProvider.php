@@ -40,7 +40,8 @@ final class AttributeMetadataProvider
                 code: (string) $row['code'],
                 type: (string) $row['type'],
                 filterable: true,
-                selectable: true
+                selectable: true,
+                sortable: true
             );
         }
 
@@ -64,7 +65,8 @@ final class AttributeMetadataProvider
                 code: (string) $row['code'],
                 type: (string) $row['type'],
                 filterable: true,
-                selectable: true
+                selectable: true,
+                sortable: true
             ),
             $rows
         );

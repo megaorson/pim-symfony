@@ -10,7 +10,8 @@ final class AttributeMetadata
         public readonly string $code,
         public readonly string $type,
         public readonly bool $filterable = true,
-        public readonly bool $selectable = true
+        public readonly bool $selectable = true,
+        public readonly bool $sortable = true
     ) {
     }
 }

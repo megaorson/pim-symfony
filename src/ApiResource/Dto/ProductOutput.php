@@ -10,8 +10,7 @@ final class ProductOutput
      */
     public function __construct(
         public int $id,
-        public string $sku,
-        public array $attributes = [],
+        public array $attributes,
     ) {
     }
 }

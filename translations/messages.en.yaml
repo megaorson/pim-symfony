@@ -39,8 +39,8 @@ security:
     missing_redirect: 'Configure a valid redirect for successful authentication.'
 eav:
   filter:
-    description: 'Filter expression format: <field> <operator> <value>. Supported operators: EQ, NE, GT, GE, LT, LE, IN, BEGINS. Multiple expressions can be combined with AND / OR and parentheses. Available filter fields: %fields%'
-    example: "sku EQ 'test'"
+    description: 'Filter expression format:<br> Supported operators: EQ, NE, GT, GE, LT, LE, IN, BEGINS.<br> Multiple expressions can be combined with AND / OR and parentheses.<br> Available filter fields: %fields%'
+    example: "sku BEGINS 'test'"
     expected_value_after_operator: 'Expected value after operator "%operator%" at position %position%.'
     unexpected_character: 'Unexpected character "%character%" at position %position%.'
     expected_open_parenthesis_after_in: 'Expected "(" after IN at position %position%.'
@@ -53,7 +53,7 @@ eav:
     invalid_in_value: 'Invalid IN value "%value%".'
     non_numeric_operator: 'Operator "%operator%" is not supported for non-numeric field "%field%" of type "%type%".'
   select:
-    description: 'Comma separated list of attributes to include in response. Use "*" to include all selectable attributes. Available select fields: %fields%'
+    description: 'Comma separated list of attributes to include in response.<br> Use "*" to include all selectable attributes.<br> Available select fields: %fields%'
     example: 'sku,name,price'
   attribute:
     unsupported_type: 'Unsupported attribute type "%type%". Configure it in "app.eav_value_entity_map".'

@@ -9,12 +9,18 @@ use App\Service\Eav\Dto\AttributeMetadata;
 use App\Service\Eav\Filter\Ast\ConditionNode;
 use App\Service\Eav\Filter\Ast\GroupNode;
 use App\Service\Eav\Filter\Ast\Node;
+use App\Service\Product\Collection\CollectionApplierInterface;
+use App\Service\Product\Collection\ProductCollectionContext;
 use Doctrine\ORM\Query\Expr\Andx;
 use Doctrine\ORM\Query\Expr\Orx;
 use Doctrine\ORM\QueryBuilder;
+use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
+use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-final class SmartEavFilterApplier
+#[AutoconfigureTag('app.product.collection_applier')]
+#[AsTaggedItem(priority: 100)]
+final class SmartEavFilterApplier implements CollectionApplierInterface
 {
     private int $joinIndex = 0;
     private int $paramIndex = 0;
@@ -37,8 +43,14 @@ final class SmartEavFilterApplier
     ) {
     }
 
-    public function apply(QueryBuilder $qb, string $filter, string $rootAlias = 'p'): void
+    public function apply(QueryBuilder $qb, ProductCollectionContext|string $context, string $rootAlias = 'p'): void
     {
+        $filter = $context instanceof ProductCollectionContext ? $context->filter : $context;
+
+        if (!is_string($filter)) {
+            return;
+        }
+
         $this->resetState();
 
         $filter = trim($filter);

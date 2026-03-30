@@ -5,49 +5,53 @@ namespace App\State;
 
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProviderInterface;
-use App\ApiResource\Dto\ProductCollectionOutput;
-use App\ApiResource\Dto\ProductOutput;
 use App\Entity\Product;
 use App\Repository\ProductRepository;
-use App\Service\Eav\Filter\SmartEavFilterApplier;
+use App\Service\Product\Collection\CollectionApplierInterface;
+use App\Service\Product\Collection\ProductCollectionContextFactory;
+use App\Service\Product\Collection\ProductCollectionResultMapper;
+use Symfony\Component\DependencyInjection\Attribute\TaggedIterator;
 
-final class ProductCollectionProvider implements ProviderInterface
+final readonly class ProductCollectionProvider implements ProviderInterface
 {
+    /**
+     * @param iterable<CollectionApplierInterface> $collectionAppliers
+     */
     public function __construct(
-        private readonly ProductRepository $productRepository,
-        private readonly SmartEavFilterApplier $smartEavFilterApplier,
+        private ProductRepository $productRepository,
+        private ProductCollectionContextFactory $contextFactory,
+        #[TaggedIterator('app.product.collection_applier')]
+        private iterable $collectionAppliers,
+        private ProductCollectionResultMapper $resultMapper,
     ) {
     }
 
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): ProductCollectionOutput
+    public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
-        $qb = $this->productRepository->createQueryBuilder('p');
-        $filters = $context['filters'] ?? [];
-        $limit = isset($filters['limit']) ? max(1, (int) $filters['limit']) : 20;
-        $offset = isset($filters['offset']) ? max(0, (int) $filters['offset']) : 0;
-        $filterString = $filters['filter'] ?? null;
+        $filters = is_array($context['filters'] ?? null) ? $context['filters'] : [];
+        $collectionContext = $this->contextFactory->create($filters);
 
-        if (is_string($filterString) && $filterString !== '') {
-            $this->smartEavFilterApplier->apply($qb, $filterString, 'p');
+        $qb = $this->productRepository->createQueryBuilder('p');
+
+        foreach ($this->collectionAppliers as $collectionApplier) {
+            $collectionApplier->apply($qb, $collectionContext, 'p');
         }
 
         $countQb = clone $qb;
-        $total = (int) $countQb->select('COUNT(DISTINCT p.id)')->resetDQLPart('orderBy')->getQuery()->getSingleScalarResult();
+        $total = (int) $countQb
+            ->select('COUNT(DISTINCT p.id)')
+            ->resetDQLPart('orderBy')
+            ->getQuery()
+            ->getSingleScalarResult();
 
-        /** @var Product[] $products */
-        $products = $qb->setFirstResult($offset)->setMaxResults($limit)->getQuery()->getResult();
+        /** @var list<Product> $products */
+        $products = $qb
+            ->select('DISTINCT p')
+            ->setFirstResult($collectionContext->offset)
+            ->setMaxResults($collectionContext->limit)
+            ->getQuery()
+            ->getResult();
 
-        $items = array_map(fn (Product $product) => $this->mapProductToOutput($product), $products);
-
-        return new ProductCollectionOutput(items: $items, total: $total, limit: $limit, offset: $offset);
-    }
-
-    private function mapProductToOutput(Product $product): ProductOutput
-    {
-        $attributes = [];
-        foreach ($product->getAllAttributeValues() as $value) {
-            $attributes[$value->getAttribute()->getCode()] = $value->getValue();
-        }
-        return new ProductOutput(id: $product->getId(), sku: $product->getSku(), attributes: $attributes);
+        return $this->resultMapper->mapCollection($products, $collectionContext, $total);
     }
 }

@@ -9,6 +9,7 @@ use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
+#[ORM\HasLifecycleCallbacks]
 class Product
 {
     #[ORM\Id]
@@ -40,6 +41,12 @@ class Product
     #[ORM\OneToMany(targetEntity: ProductAttributeValueImage::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
     private Collection $imageValues;
 
+    #[ORM\Column(options: ['default' => 'CURRENT_TIMESTAMP'])]
+    private \DateTimeImmutable $updated_at;
+
+    #[ORM\Column(options: ['default' => 'CURRENT_TIMESTAMP'])]
+    private \DateTimeImmutable $created_at;
+
     public function __construct()
     {
         $this->decimalValues = new ArrayCollection();
@@ -48,9 +55,29 @@ class Product
         $this->imageValues = new ArrayCollection();
     }
 
+    #[ORM\PrePersist]
+    public function onPrePersist(): void
+    {
+        $now = new \DateTimeImmutable();
+
+        $this->created_at = $now;
+        $this->updated_at = $now;
+    }
+
+    #[ORM\PreUpdate]
+    public function onPreUpdate(): void
+    {
+        $this->updated_at = new \DateTimeImmutable();
+    }
+
     public function getAttributes(): array
     {
         return [];
+    }
+
+    public function getAttributeValue(string $code)
+    {
+        return '';
     }
 
     public function getAllAttributeValues(): array
@@ -199,6 +226,30 @@ class Product
                 $imageValue->setProduct(null);
             }
         }
+
+        return $this;
+    }
+
+    public function getUpdatedAt(): ?\DateTimeImmutable
+    {
+        return $this->updated_at;
+    }
+
+    public function setUpdatedAt(\DateTimeImmutable $updated_at): static
+    {
+        $this->updated_at = $updated_at;
+
+        return $this;
+    }
+
+    public function getCreatedAt(): ?\DateTimeImmutable
+    {
+        return $this->created_at;
+    }
+
+    public function setCreatedAt(\DateTimeImmutable $created_at): static
+    {
+        $this->created_at = $created_at;
 
         return $this;
     }
