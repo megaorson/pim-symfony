@@ -48,8 +48,7 @@ class Product
         $this->imageValues = new ArrayCollection();
     }
 
-    public function getAttributes()
-    : array
+    public function getAttributes(): array
     {
         return [];
     }
@@ -68,20 +67,17 @@ class Product
      * Retrieves the ID.
      * @return int|null The ID value or null if not set.
      */
-    public function getId()
-    : ?int
+    public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getSku()
-    : ?string
+    public function getSku(): ?string
     {
         return $this->sku;
     }
 
-    public function setSku(string $sku)
-    : static {
+    public function setSku(string $sku): static {
         $this->sku = $sku;
 
         return $this;
@@ -90,14 +86,13 @@ class Product
     /**
      * @return Collection<int, ProductAttributeValueDecimal>
      */
-    public function getDecimalValues()
-    : Collection
+    public function getDecimalValues(): Collection
     {
         return $this->decimalValues;
     }
 
-    public function addDecimalValue(ProductAttributeValueDecimal $productAttributeValueDecimal)
-    : static {
+    public function addDecimalValue(ProductAttributeValueDecimal $productAttributeValueDecimal): static
+    {
         if (!$this->decimalValues->contains($productAttributeValueDecimal)) {
             $this->decimalValues->add($productAttributeValueDecimal);
             $productAttributeValueDecimal->setProduct($this);
@@ -106,8 +101,8 @@ class Product
         return $this;
     }
 
-    public function removeDecimalValue(ProductAttributeValueDecimal $productAttributeValueDecimal)
-    : static {
+    public function removeDecimalValue(ProductAttributeValueDecimal $productAttributeValueDecimal): static
+    {
         if ($this->decimalValues->removeElement($productAttributeValueDecimal)) {
             // set the owning side to null (unless already changed)
             if ($productAttributeValueDecimal->getProduct() === $this) {
@@ -121,14 +116,13 @@ class Product
     /**
      * @return Collection<int, ProductAttributeValueText>
      */
-    public function getTextValues()
-    : Collection
+    public function getTextValues(): Collection
     {
         return $this->textValues;
     }
 
-    public function addTextValue(ProductAttributeValueText $textValue)
-    : static {
+    public function addTextValue(ProductAttributeValueText $textValue): static
+    {
         if (!$this->textValues->contains($textValue)) {
             $this->textValues->add($textValue);
             $textValue->setProduct($this);
@@ -137,8 +131,8 @@ class Product
         return $this;
     }
 
-    public function removeTextValue(ProductAttributeValueText $textValue)
-    : static {
+    public function removeTextValue(ProductAttributeValueText $textValue): static
+    {
         if ($this->textValues->removeElement($textValue)) {
             // set the owning side to null (unless already changed)
             if ($textValue->getProduct() === $this) {
@@ -152,14 +146,13 @@ class Product
     /**
      * @return Collection<int, ProductAttributeValueInt>
      */
-    public function getIntValues()
-    : Collection
+    public function getIntValues(): Collection
     {
         return $this->intValues;
     }
 
-    public function addIntValue(ProductAttributeValueInt $intValue)
-    : static {
+    public function addIntValue(ProductAttributeValueInt $intValue): static
+    {
         if (!$this->intValues->contains($intValue)) {
             $this->intValues->add($intValue);
             $intValue->setProduct($this);
@@ -168,8 +161,8 @@ class Product
         return $this;
     }
 
-    public function removeIntValue(ProductAttributeValueInt $intValue)
-    : static {
+    public function removeIntValue(ProductAttributeValueInt $intValue): static
+    {
         if ($this->intValues->removeElement($intValue)) {
             // set the owning side to null (unless already changed)
             if ($intValue->getProduct() === $this) {
@@ -183,14 +176,13 @@ class Product
     /**
      * @return Collection<int, ProductAttributeValueImage>
      */
-    public function getImageValues()
-    : Collection
+    public function getImageValues(): Collection
     {
         return $this->imageValues;
     }
 
-    public function addImageValue(ProductAttributeValueImage $imageValue)
-    : static {
+    public function addImageValue(ProductAttributeValueImage $imageValue): static
+    {
         if (!$this->imageValues->contains($imageValue)) {
             $this->imageValues->add($imageValue);
             $imageValue->setProduct($this);
@@ -199,8 +191,8 @@ class Product
         return $this;
     }
 
-    public function removeImageValue(ProductAttributeValueImage $imageValue)
-    : static {
+    public function removeImageValue(ProductAttributeValueImage $imageValue): static
+    {
         if ($this->imageValues->removeElement($imageValue)) {
             // set the owning side to null (unless already changed)
             if ($imageValue->getProduct() === $this) {

@@ -7,8 +7,7 @@ abstract class ProductAttributeValueAbstract implements ProductAttributeTypeInte
 {
     public const TYPE = 'default';
 
-    public function getType()
-    : string
+    public function getType(): string
     {
         return static::TYPE;
     }

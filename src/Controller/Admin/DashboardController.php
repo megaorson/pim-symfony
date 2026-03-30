@@ -3,52 +3,49 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Repository\ProductRepository;
 use App\Repository\ProductAttributeRepository;
+use App\Repository\ProductRepository;
 use EasyCorp\Bundle\EasyAdminBundle\Attribute\AdminDashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Dashboard;
 use EasyCorp\Bundle\EasyAdminBundle\Config\MenuItem;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractDashboardController;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 #[AdminDashboard(routePath: '/admin', routeName: 'admin')]
-class DashboardController extends AbstractDashboardController
+final class DashboardController extends AbstractDashboardController
 {
     public function __construct(
-        private ProductRepository $productRepository,
-        private ProductAttributeRepository $productAttributeRepository
-    ) {}
+        private readonly ProductRepository $productRepository,
+        private readonly ProductAttributeRepository $productAttributeRepository,
+        private readonly TranslatorInterface $translator
+    ) {
+    }
 
     public function index(): Response
     {
-        $productCount = $this->productRepository->count([]);
-        $attributeCount = $this->productAttributeRepository->count([]);
-
         return $this->render('admin/dashboard.html.twig', [
-            'productCount' => $productCount,
-            'attributeCount' => $attributeCount,
+            'productCount' => $this->productRepository->count([]),
+            'attributeCount' => $this->productAttributeRepository->count([]),
         ]);
     }
 
-    public function configureDashboard()
-    : Dashboard
+    public function configureDashboard(): Dashboard
     {
-        return Dashboard::new()
-            ->setTitle('Pim');
+        return Dashboard::new()->setTitle($this->translator->trans('admin.dashboard.title'));
     }
 
-    public function configureMenuItems()
-    : iterable
+    public function configureMenuItems(): iterable
     {
-        yield MenuItem::linkToDashboard('Dashboard', 'fa fa-home');
+        yield MenuItem::linkToDashboard($this->translator->trans('admin.menu.dashboard'), 'fa fa-home');
         yield MenuItem::linkTo(
             ProductCrudController::class,
-            'Products',
+            $this->translator->trans('admin.menu.products'),
             'fa fa-box'
         );
         yield MenuItem::linkTo(
             ProductAttributeCrudController::class,
-            'Product Attribute',
+            $this->translator->trans('admin.menu.product_attributes'),
             'fa fa-box'
         );
     }

@@ -27,46 +27,42 @@ class ProductAttributeValueInt extends ProductAttributeValueAbstract
     #[ORM\JoinColumn(nullable: false)]
     private ?Product $product = null;
 
-    public function getId()
-    : ?int
+    public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getValue()
-    : ?int
+    public function getValue(): ?int
     {
         return $this->value;
     }
 
-    public function setValue($value)
-    : static {
+    public function setValue($value): static
+    {
         $this->value = (int)$value;
 
         return $this;
     }
 
-    public function getAttribute()
-    : ?ProductAttribute
+    public function getAttribute(): ?ProductAttribute
     {
         return $this->attribute;
     }
 
-    public function setAttribute(?ProductAttribute $attribute)
-    : static {
+    public function setAttribute(?ProductAttribute $attribute): static
+    {
         $this->attribute = $attribute;
 
         return $this;
     }
 
-    public function getProduct()
-    : ?Product
+    public function getProduct(): ?Product
     {
         return $this->product;
     }
 
-    public function setProduct(?Product $product)
-    : static {
+    public function setProduct(?Product $product): static
+    {
         $this->product = $product;
 
         return $this;

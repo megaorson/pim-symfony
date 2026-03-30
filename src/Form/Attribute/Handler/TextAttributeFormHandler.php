@@ -9,8 +9,7 @@ use App\Entity\ProductAttributeValueText;
 
 class TextAttributeFormHandler extends AbstractAttributeFormHandler
 {
-    protected function getFormType()
-    : string
+    protected function getFormType(): string
     {
         return TextareaType::class;
     }
@@ -25,8 +24,7 @@ class TextAttributeFormHandler extends AbstractAttributeFormHandler
         return (string)$value;
     }
 
-    protected function getAttributeType()
-    : string
+    protected function getAttributeType(): string
     {
         return ProductAttributeValueText::TYPE;
     }

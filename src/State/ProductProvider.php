@@ -12,7 +12,8 @@ class ProductProvider extends AbstractProduct implements ProviderInterface
         Operation $operation,
         array $uriVariables = [],
         array $context = []
-    ): object|array|null {
+    ): object|array|null
+    {
         if (isset($uriVariables['id'])) {
             $product = $this->productRepository->find($uriVariables['id']);
 

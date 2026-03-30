@@ -44,8 +44,8 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
         return $this->email;
     }
 
-    public function setEmail(string $email)
-    : static {
+    public function setEmail(string $email): static
+    {
         $this->email = $email;
 
         return $this;
@@ -55,8 +55,7 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
      * A visual identifier that represents this user.
      * @see UserInterface
      */
-    public function getUserIdentifier()
-    : string
+    public function getUserIdentifier(): string
     {
         return (string)$this->email;
     }
@@ -64,8 +63,7 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @see UserInterface
      */
-    public function getRoles()
-    : array
+    public function getRoles(): array
     {
         $roles = $this->roles;
         // guarantee every user at least has ROLE_USER
@@ -77,8 +75,8 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @param list<string> $roles
      */
-    public function setRoles(array $roles)
-    : static {
+    public function setRoles(array $roles): static
+    {
         $this->roles = $roles;
 
         return $this;
@@ -87,14 +85,12 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * @see PasswordAuthenticatedUserInterface
      */
-    public function getPassword()
-    : ?string
+    public function getPassword(): ?string
     {
         return $this->password;
     }
 
-    public function setPassword(string $password)
-    : static {
+    public function setPassword(string $password): static {
         $this->password = $password;
 
         return $this;
@@ -103,8 +99,7 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
     /**
      * Ensure the session doesn't contain actual password hashes by CRC32C-hashing them, as supported since Symfony 7.3.
      */
-    public function __serialize()
-    : array
+    public function __serialize(): array
     {
         $data = (array)$this;
         $data["\0" . self::class . "\0password"] = hash('crc32c', $this->password);
@@ -113,8 +108,7 @@ class AdminUser implements UserInterface, PasswordAuthenticatedUserInterface
     }
 
     #[\Deprecated]
-    public function eraseCredentials()
-    : void
+    public function eraseCredentials(): void
     {
         // @deprecated, to be removed when upgrading to Symfony 8
     }

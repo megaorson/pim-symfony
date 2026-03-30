@@ -9,8 +9,7 @@ use App\Entity\ProductAttributeValueDecimal;
 
 class DecimalAttributeFormHandler extends AbstractAttributeFormHandler
 {
-    protected function getFormType()
-    : string
+    protected function getFormType(): string
     {
         return NumberType::class;
     }
@@ -25,8 +24,7 @@ class DecimalAttributeFormHandler extends AbstractAttributeFormHandler
         return $value !== null ? (float)$value : null;
     }
 
-    protected function getAttributeType()
-    : string
+    protected function getAttributeType(): string
     {
         return ProductAttributeValueDecimal::TYPE;
     }

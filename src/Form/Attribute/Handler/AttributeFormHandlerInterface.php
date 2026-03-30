@@ -9,12 +9,9 @@ use Symfony\Component\Form\FormInterface;
 
 interface AttributeFormHandlerInterface
 {
-    public function supports(string $type)
-    : bool;
+    public function supports(string $type): bool;
 
-    public function buildField(FormInterface $builder, ProductAttribute $attribute, ?Product $product)
-    : void;
+    public function buildField(FormInterface $builder, ProductAttribute $attribute, ?Product $product): void;
 
-    public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product)
-    : void;
+    public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product): void;
 }

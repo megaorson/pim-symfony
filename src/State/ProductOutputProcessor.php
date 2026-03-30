@@ -14,7 +14,8 @@ class ProductOutputProcessor extends AbstractProduct implements ProcessorInterfa
         Operation $operation,
         array $uriVariables = [],
         array $context = []
-    ): mixed {
+    ): mixed
+    {
         if ($data instanceof Product) {
             return $this->transform($data);
         }

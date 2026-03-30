@@ -5,65 +5,59 @@ namespace App\Form\Attribute\Handler;
 
 use App\Entity\Product;
 use App\Entity\ProductAttribute;
-use App\Service\Eav\AttributeTypeRegistry;
 use App\Entity\ProductAttributeTypeInterface;
+use App\Service\Eav\AttributeTypeRegistry;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\FormInterface;
 
 abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInterface
 {
     public function __construct(
-        protected EntityManagerInterface  $em,
-        protected AttributeTypeRegistry $attributeTypeRegistry
+        protected readonly EntityManagerInterface $em,
+        protected readonly AttributeTypeRegistry $attributeTypeRegistry
     ) {
     }
 
-    public function supports(string $type)
-    : bool {
+    public function supports(string $type): bool
+    {
         return $type === $this->getAttributeType();
     }
 
-    abstract protected function getFormType()
-    : string;
+    abstract protected function getFormType(): string;
+    abstract protected function getAttributeType(): string;
 
-    abstract protected function getAttributeType()
-    : string;
-
-    protected function createEntity()
-    : ProductAttributeTypeInterface
+    protected function createEntity(): ProductAttributeTypeInterface
     {
         return $this->attributeTypeRegistry->create($this::getAttributeType());
     }
 
     abstract protected function getCollection(Product $product);
 
-    public function buildField(FormInterface $builder, ProductAttribute $attribute, ?Product $product)
-    : void {
-        if ($product) {
-            $existing = $this->findExisting($product, $attribute);
-            $builder->add($attribute->getCode(), $this->getFormType(), [
-                'label'    => $attribute->getName(),
-                'required' => false,
-                'mapped'   => false,
-                'data'     => $existing?->getValue(),
-            ]);
+    public function buildField(FormInterface $builder, ProductAttribute $attribute, ?Product $product): void
+    {
+        if (!$product) {
+            return;
         }
+
+        $existing = $this->findExisting($product, $attribute);
+        $builder->add($attribute->getCode(), $this->getFormType(), [
+            'label' => $attribute->getName(),
+            'required' => false,
+            'mapped' => false,
+            'data' => $existing?->getValue(),
+        ]);
     }
 
-    public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product)
-    : void {
+    public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product): void
+    {
         $fieldName = $attribute->getCode();
-
         if (!$builder->has($fieldName)) {
             return;
         }
 
         $value = $builder->get($fieldName)->getData();
-
         $existing = $this->findExisting($product, $attribute);
-
         $normalized = $this->normalizeValue($value, $existing, $product);
-
         if ($normalized === null) {
             return;
         }
@@ -72,7 +66,6 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
             $existing = $this->createEntity();
             $existing->setProduct($product);
             $existing->setAttribute($attribute);
-
             $this->getCollection($product)->add($existing);
         }
 
@@ -86,7 +79,6 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
                 return $val;
             }
         }
-
         return null;
     }
 

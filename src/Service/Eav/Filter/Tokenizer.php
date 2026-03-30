@@ -3,6 +3,8 @@ declare(strict_types=1);
 
 namespace App\Service\Eav\Filter;
 
+use Symfony\Contracts\Translation\TranslatorInterface;
+
 final class Tokenizer
 {
     private const OPERATORS = ['EQ', 'NE', 'GT', 'GE', 'LT', 'LE', 'IN', 'BEGINS'];
@@ -10,6 +12,11 @@ final class Tokenizer
     private string $input = '';
     private int $length = 0;
     private int $position = 0;
+
+    public function __construct(
+        private readonly TranslatorInterface $translator
+    ) {
+    }
 
     /**
      * @return list<Token>
@@ -67,10 +74,12 @@ final class Tokenizer
                     $value = $this->readValue($upperWord);
 
                     if ($value === '') {
-                        throw new \InvalidArgumentException(sprintf(
-                            'Expected value after operator "%s" at position %d',
-                            $upperWord,
-                            $valueStart
+                        throw new \InvalidArgumentException($this->translator->trans(
+                            'eav.filter.expected_value_after_operator',
+                            [
+                                '%operator%' => $upperWord,
+                                '%position%' => (string) $valueStart,
+                            ]
                         ));
                     }
 
@@ -82,10 +91,12 @@ final class Tokenizer
                 continue;
             }
 
-            throw new \InvalidArgumentException(sprintf(
-                'Unexpected character "%s" at position %d',
-                $char,
-                $this->position
+            throw new \InvalidArgumentException($this->translator->trans(
+                'eav.filter.unexpected_character',
+                [
+                    '%character%' => $char,
+                    '%position%' => (string) $this->position,
+                ]
             ));
         }
 
@@ -128,9 +139,9 @@ final class Tokenizer
         $this->skipWhitespace();
 
         if ($this->isEnd() || $this->currentChar() !== '(') {
-            throw new \InvalidArgumentException(sprintf(
-                'Expected "(" after IN at position %d',
-                $this->position
+            throw new \InvalidArgumentException($this->translator->trans(
+                'eav.filter.expected_open_parenthesis_after_in',
+                ['%position%' => (string) $this->position]
             ));
         }
 
@@ -184,9 +195,9 @@ final class Tokenizer
         }
 
         if ($depth !== 0) {
-            throw new \InvalidArgumentException(sprintf(
-                'Unterminated IN expression starting at position %d',
-                $start
+            throw new \InvalidArgumentException($this->translator->trans(
+                'eav.filter.unterminated_in_expression',
+                ['%position%' => (string) $start]
             ));
         }
 
@@ -221,11 +232,15 @@ final class Tokenizer
             $this->position++;
         }
 
-        throw new \InvalidArgumentException('Unterminated quoted string.');
+        throw new \InvalidArgumentException($this->translator->trans('eav.filter.unterminated_quoted_string'));
     }
 
     private function readWord(): string
     {
+        if ($this->isEnd()) {
+            return '';
+        }
+
         $start = $this->position;
 
         while (!$this->isEnd()) {
@@ -243,7 +258,7 @@ final class Tokenizer
 
     private function isLogicalAhead(): bool
     {
-        $remaining = strtoupper(substr($this->input, $this->position));
+        $remaining = substr($this->input, $this->position);
 
         return preg_match('/^(AND|OR)(\s|\(|\)|$)/', $remaining) === 1;
     }

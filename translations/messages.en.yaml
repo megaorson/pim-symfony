@@ -1,0 +1,60 @@
+admin:
+  dashboard:
+    title: 'PIM'
+  menu:
+    dashboard: 'Dashboard'
+    products: 'Products'
+    product_attributes: 'Product attributes'
+  product:
+    field:
+      sku: 'SKU'
+      attributes: 'Attributes'
+    fieldset:
+      attributes: 'Attributes'
+    image:
+      remove: 'Remove image'
+  product_attribute:
+    field:
+      code: 'Code'
+      name: 'Name'
+      type: 'Type'
+console:
+  create_admin:
+    description: 'Create admin user from console'
+    argument:
+      email: 'User email'
+      password: 'User password'
+    option:
+      role: 'User role'
+    error:
+      exists: 'User already exists.'
+    success: 'Admin user created successfully.'
+product:
+  attribute:
+    not_found: 'Attribute "%code%" was not found.'
+security:
+  logout:
+    intercepted_by_firewall: 'This method can stay blank because the logout key on your firewall intercepts it.'
+  authenticator:
+    missing_redirect: 'Configure a valid redirect for successful authentication.'
+eav:
+  filter:
+    description: 'Filter expression format: <field> <operator> <value>. Supported operators: EQ, NE, GT, GE, LT, LE, IN, BEGINS. Multiple expressions can be combined with AND / OR and parentheses. Available filter fields: %fields%'
+    example: "sku EQ 'test'"
+    expected_value_after_operator: 'Expected value after operator "%operator%" at position %position%.'
+    unexpected_character: 'Unexpected character "%character%" at position %position%.'
+    expected_open_parenthesis_after_in: 'Expected "(" after IN at position %position%.'
+    unterminated_in_expression: 'Unterminated IN expression starting at position %position%.'
+    unterminated_quoted_string: 'Unterminated quoted string.'
+    expected_token: 'Expected token %expected%, got %actual% at position %position%.'
+    unknown_field: 'Unknown filter field "%field%".'
+    empty_in_values: 'IN operator for field "%field%" cannot contain an empty list.'
+    unsupported_operator: 'Unsupported operator "%operator%".'
+    invalid_in_value: 'Invalid IN value "%value%".'
+    non_numeric_operator: 'Operator "%operator%" is not supported for non-numeric field "%field%" of type "%type%".'
+  select:
+    description: 'Comma separated list of attributes to include in response. Use "*" to include all selectable attributes. Available select fields: %fields%'
+    example: 'sku,name,price'
+  attribute:
+    unsupported_type: 'Unsupported attribute type "%type%". Configure it in "app.eav_value_entity_map".'
+    no_handler: 'No handler found for type "%type%".'

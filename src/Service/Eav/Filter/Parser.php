@@ -6,6 +6,7 @@ namespace App\Service\Eav\Filter;
 use App\Service\Eav\Filter\Ast\ConditionNode;
 use App\Service\Eav\Filter\Ast\GroupNode;
 use App\Service\Eav\Filter\Ast\Node;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class Parser
 {
@@ -14,7 +15,8 @@ final class Parser
     private int $position = 0;
 
     public function __construct(
-        private readonly Tokenizer $tokenizer
+        private readonly Tokenizer $tokenizer,
+        private readonly TranslatorInterface $translator
     ) {
     }
 
@@ -87,11 +89,13 @@ final class Parser
         $token = $this->current();
 
         if ($token->type !== $type) {
-            throw new \InvalidArgumentException(sprintf(
-                'Expected token %s, got %s at position %d',
-                $type,
-                $token->type,
-                $token->position
+            throw new \InvalidArgumentException($this->translator->trans(
+                'eav.filter.expected_token',
+                [
+                    '%expected%' => $type,
+                    '%actual%' => $token->type,
+                    '%position%' => (string) $token->position,
+                ]
             ));
         }
 

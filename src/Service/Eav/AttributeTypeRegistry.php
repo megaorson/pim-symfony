@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service\Eav;
 
-use App\Entity\ProductAttributeTypeInterface;
+use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class AttributeTypeRegistry
 {
@@ -11,26 +11,28 @@ final class AttributeTypeRegistry
      * @param array<string, class-string> $valueEntityMap
      */
     public function __construct(
-        private readonly array $valueEntityMap
+        private readonly array $valueEntityMap,
+        private readonly TranslatorInterface $translator
     ) {
     }
 
     public function getValueEntityClass(string $type): string
     {
         if (!isset($this->valueEntityMap[$type])) {
-            throw new \InvalidArgumentException(sprintf(
-                'Unsupported attribute type "%s". Configure it in "app.eav_value_entity_map".',
-                $type
+            throw new \InvalidArgumentException($this->translator->trans(
+                'eav.attribute.unsupported_type',
+                ['%type%' => $type]
             ));
         }
 
         return $this->valueEntityMap[$type];
     }
 
-    public function create(string $attributeType)
-    : ProductAttributeTypeInterface {
-        $class = $this->getValueEntityClass($attributeType);
-        return new $class();
+    public function create(string $type): object
+    {
+        $entityClass = $this->getValueEntityClass($type);
+
+        return new $entityClass();
     }
 
     /**

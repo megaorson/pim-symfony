@@ -11,21 +11,17 @@ use Doctrine\ORM\EntityManagerInterface;
 abstract class AbstractProduct
 {
     public function __construct(
-        protected EntityManagerInterface $em,
-        protected ProductRepository $productRepository
-    ) {}
+        protected readonly EntityManagerInterface $em,
+        protected readonly ProductRepository $productRepository
+    ) {
+    }
 
     protected function transform(Product $product): ProductOutput
     {
-        $dto = new ProductOutput(
-            $product->getId(),
-            $product->getSku()
-        );
-
+        $dto = new ProductOutput($product->getId(), $product->getSku());
         foreach ($product->getAllAttributeValues() as $value) {
             $dto->attributes[$value->getAttribute()->getCode()] = $value->getValue();
         }
-
         return $dto;
     }
 }

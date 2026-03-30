@@ -9,8 +9,7 @@ use App\Entity\ProductAttributeValueInt;
 
 class IntAttributeFormHandler extends AbstractAttributeFormHandler
 {
-    protected function getFormType()
-    : string
+    protected function getFormType(): string
     {
         return IntegerType::class;
     }
@@ -25,8 +24,7 @@ class IntAttributeFormHandler extends AbstractAttributeFormHandler
         return (int)$value;
     }
 
-    protected function getAttributeType()
-    : string
+    protected function getAttributeType(): string
     {
         return ProductAttributeValueInt::TYPE;
     }
