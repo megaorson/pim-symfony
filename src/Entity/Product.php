@@ -3,15 +3,20 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Contracts\TimestampableInterface;
+use App\Entity\Traits\TimestampableTrait;
 use App\Repository\ProductRepository;
+use App\Subscriber\TimestampSubscriber;
 use Doctrine\Common\Collections\ArrayCollection;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
-#[ORM\HasLifecycleCallbacks]
-class Product
+#[ORM\EntityListeners([TimestampSubscriber::class])]
+class Product implements TimestampableInterface
 {
+    use TimestampableTrait;
+
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
@@ -41,33 +46,12 @@ class Product
     #[ORM\OneToMany(targetEntity: ProductAttributeValueImage::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
     private Collection $imageValues;
 
-    #[ORM\Column(options: ['default' => 'CURRENT_TIMESTAMP'])]
-    private \DateTimeImmutable $updated_at;
-
-    #[ORM\Column(options: ['default' => 'CURRENT_TIMESTAMP'])]
-    private \DateTimeImmutable $created_at;
-
     public function __construct()
     {
         $this->decimalValues = new ArrayCollection();
         $this->textValues = new ArrayCollection();
         $this->intValues = new ArrayCollection();
         $this->imageValues = new ArrayCollection();
-    }
-
-    #[ORM\PrePersist]
-    public function onPrePersist(): void
-    {
-        $now = new \DateTimeImmutable();
-
-        $this->created_at = $now;
-        $this->updated_at = $now;
-    }
-
-    #[ORM\PreUpdate]
-    public function onPreUpdate(): void
-    {
-        $this->updated_at = new \DateTimeImmutable();
     }
 
     public function getAttributes(): array
@@ -226,30 +210,6 @@ class Product
                 $imageValue->setProduct(null);
             }
         }
-
-        return $this;
-    }
-
-    public function getUpdatedAt(): ?\DateTimeImmutable
-    {
-        return $this->updated_at;
-    }
-
-    public function setUpdatedAt(\DateTimeImmutable $updated_at): static
-    {
-        $this->updated_at = $updated_at;
-
-        return $this;
-    }
-
-    public function getCreatedAt(): ?\DateTimeImmutable
-    {
-        return $this->created_at;
-    }
-
-    public function setCreatedAt(\DateTimeImmutable $created_at): static
-    {
-        $this->created_at = $created_at;
 
         return $this;
     }

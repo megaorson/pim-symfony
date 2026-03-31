@@ -3,10 +3,8 @@ declare(strict_types=1);
 
 namespace App\Controller\Admin;
 
-use App\Entity\Product;
 use App\Entity\ProductAttribute;
 use App\Service\Eav\AttributeTypeRegistry;
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
@@ -23,27 +21,6 @@ final class ProductAttributeCrudController extends AbstractCrudController
     public static function getEntityFqcn(): string
     {
         return ProductAttribute::class;
-    }
-
-    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
-    {
-        if ($entityInstance instanceof ProductAttribute) {
-            $now = new \DateTimeImmutable();
-
-            $entityInstance->setCreatedAt($now);
-            $entityInstance->setUpdatedAt($now);
-        }
-
-        parent::persistEntity($entityManager, $entityInstance);
-    }
-
-    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
-    {
-        if ($entityInstance instanceof ProductAttribute) {
-            $entityInstance->setUpdatedAt(new \DateTimeImmutable());
-        }
-
-        parent::updateEntity($entityManager, $entityInstance);
     }
 
     public function configureFields(string $pageName): iterable

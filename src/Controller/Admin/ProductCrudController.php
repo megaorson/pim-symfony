@@ -5,7 +5,6 @@ namespace App\Controller\Admin;
 
 use App\Entity\Product;
 use App\Form\ProductType;
-use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\Field;
 use EasyCorp\Bundle\EasyAdminBundle\Field\FormField;
@@ -22,27 +21,6 @@ final class ProductCrudController extends AbstractCrudController
     public static function getEntityFqcn(): string
     {
         return Product::class;
-    }
-
-    public function persistEntity(EntityManagerInterface $entityManager, $entityInstance): void
-    {
-        if ($entityInstance instanceof Product) {
-            $now = new \DateTimeImmutable();
-
-            $entityInstance->setCreatedAt($now);
-            $entityInstance->setUpdatedAt($now);
-        }
-
-        parent::persistEntity($entityManager, $entityInstance);
-    }
-
-    public function updateEntity(EntityManagerInterface $entityManager, $entityInstance): void
-    {
-        if ($entityInstance instanceof Product) {
-            $entityInstance->setUpdatedAt(new \DateTimeImmutable());
-        }
-
-        parent::updateEntity($entityManager, $entityInstance);
     }
 
     public function configureFields(string $pageName): iterable

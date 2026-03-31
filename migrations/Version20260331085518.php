@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20260330164414 extends AbstractMigration
+final class Version20260331085518 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -20,14 +20,14 @@ final class Version20260330164414 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE product ADD updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, ADD created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL');
-        $this->addSql('ALTER TABLE product_attribute ADD updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, ADD created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL');
+        $this->addSql('ALTER TABLE product ADD created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, ADD updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL');
+        $this->addSql('ALTER TABLE product_attribute ADD created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, ADD updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL');
     }
 
     public function down(Schema $schema): void
     {
         // this down() migration is auto-generated, please modify it to your needs
-        $this->addSql('ALTER TABLE product DROP updated_at, DROP created_at');
-        $this->addSql('ALTER TABLE product_attribute DROP updated_at, DROP created_at');
+        $this->addSql('ALTER TABLE product DROP created_at, DROP updated_at');
+        $this->addSql('ALTER TABLE product_attribute DROP created_at, DROP updated_at');
     }
 }
