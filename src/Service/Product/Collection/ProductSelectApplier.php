@@ -4,6 +4,8 @@ declare(strict_types=1);
 namespace App\Service\Product\Collection;
 
 use App\Service\Eav\AttributeMetadataProvider;
+use App\Service\Eav\Dto\AttributeMetadata;
+use App\Service\Product\Field\ProductSystemFieldRegistry;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
@@ -13,14 +15,8 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 #[AsTaggedItem(priority: 200)]
 final readonly class ProductSelectApplier implements CollectionApplierInterface
 {
-    private const STATIC_FIELDS = [
-        'id',
-        'sku',
-        'createdAt',
-        'updatedAt',
-    ];
-
     public function __construct(
+        private ProductSystemFieldRegistry $systemFieldRegistry,
         private AttributeMetadataProvider $attributeMetadataProvider,
         private TranslatorInterface $translator,
     ) {
@@ -32,21 +28,41 @@ final readonly class ProductSelectApplier implements CollectionApplierInterface
             return;
         }
 
-        $requestedAttributeCodes = array_values(array_filter(
-            $context->selectedFields,
-            static fn (string $field): bool => !in_array($field, self::STATIC_FIELDS, true),
-        ));
+        $requestedAttributeCodes = [];
+
+        foreach ($context->selectedFields as $field) {
+            if ($this->systemFieldRegistry->isSystemField($field)) {
+                if (!$this->systemFieldRegistry->isSelectable($field)) {
+                    throw new \InvalidArgumentException(
+                        $this->translator->trans('eav.select.field_not_selectable', ['%field%' => $field])
+                    );
+                }
+
+                continue;
+            }
+
+            $requestedAttributeCodes[] = $field;
+        }
 
         if ($requestedAttributeCodes === []) {
             return;
         }
 
+        $requestedAttributeCodes = array_values(array_unique($requestedAttributeCodes));
         $metadataMap = $this->attributeMetadataProvider->getByCodes($requestedAttributeCodes);
 
         foreach ($requestedAttributeCodes as $code) {
-            if (!isset($metadataMap[$code])) {
+            $metadata = $metadataMap[$code] ?? null;
+
+            if (!$metadata instanceof AttributeMetadata) {
                 throw new \InvalidArgumentException(
                     $this->translator->trans('eav.select.unknown_field', ['%field%' => $code])
+                );
+            }
+
+            if (!$metadata->selectable) {
+                throw new \InvalidArgumentException(
+                    $this->translator->trans('eav.select.field_not_selectable', ['%field%' => $code])
                 );
             }
         }

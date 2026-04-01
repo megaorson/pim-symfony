@@ -6,77 +6,138 @@ namespace App\Service\Product\Collection;
 use App\Service\Eav\AttributeMetadataProvider;
 use App\Service\Eav\AttributeTypeRegistry;
 use App\Service\Eav\Dto\AttributeMetadata;
+use App\Service\Product\Field\ProductSystemFieldRegistry;
 use Doctrine\ORM\QueryBuilder;
-use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
-use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
-#[AutoconfigureTag('app.product.collection_applier')]
-#[AsTaggedItem(priority: -200)]
-final readonly class ProductSortApplier implements CollectionApplierInterface
+final class ProductSortApplier implements CollectionApplierInterface
 {
-    /** @var array<string, string> */
-    private const BASE_SORT_FIELDS = [
-        'id' => 'id',
-        'sku' => 'sku',
-    ];
-
     public function __construct(
-        private AttributeMetadataProvider $attributeMetadataProvider,
-        private AttributeTypeRegistry $attributeTypeRegistry,
-        private TranslatorInterface $translator,
+        private readonly ProductSystemFieldRegistry $systemFieldRegistry,
+        private readonly AttributeMetadataProvider $attributeMetadataProvider,
+        private readonly AttributeTypeRegistry $attributeTypeRegistry,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
     public function apply(QueryBuilder $qb, ProductCollectionContext $context, string $rootAlias = 'p'): void
     {
         if ($context->sorts === []) {
-            $qb->addOrderBy($rootAlias . '.id', 'DESC');
+            $qb->addOrderBy(
+                sprintf('%s.%s', $rootAlias, $this->systemFieldRegistry->getDoctrineField('id')),
+                'DESC'
+            );
+
             return;
         }
 
-        $requestedAttributeCodes = [];
-        foreach ($context->sorts as $sort) {
-            if (!isset(self::BASE_SORT_FIELDS[$sort['field']])) {
-                $requestedAttributeCodes[] = $sort['field'];
-            }
-        }
-
+        $requestedAttributeCodes = $this->collectRequestedAttributeCodes($context);
         $metadataMap = $this->attributeMetadataProvider->getByCodes($requestedAttributeCodes);
-        $index = 0;
+
+        $joinIndex = 0;
+        $sortedByIdExplicitly = false;
 
         foreach ($context->sorts as $sort) {
             $field = $sort['field'];
             $direction = $sort['direction'];
 
-            if (isset(self::BASE_SORT_FIELDS[$field])) {
-                $qb->addOrderBy($rootAlias . '.' . self::BASE_SORT_FIELDS[$field], $direction);
+            if ($field === 'id') {
+                $sortedByIdExplicitly = true;
+            }
+
+            if ($this->systemFieldRegistry->isSystemField($field)) {
+                if (!$this->systemFieldRegistry->isSortable($field)) {
+                    throw new \InvalidArgumentException(
+                        $this->translator->trans('eav.sort.field_not_sortable', ['%field%' => $field])
+                    );
+                }
+
+                $qb->addOrderBy(
+                    sprintf('%s.%s', $rootAlias, $this->systemFieldRegistry->getDoctrineField($field)),
+                    $direction
+                );
+
                 continue;
             }
 
             $metadata = $metadataMap[$field] ?? null;
+
             if (!$metadata instanceof AttributeMetadata) {
-                throw new \InvalidArgumentException($this->translator->trans('eav.sort.unknown_field', ['%field%' => $field]));
+                throw new \InvalidArgumentException(
+                    $this->translator->trans('eav.sort.unknown_field', ['%field%' => $field])
+                );
             }
 
-            $this->applyAttributeSort($qb, $rootAlias, $metadata, $direction, $index++);
+            if (!$metadata->sortable) {
+                throw new \InvalidArgumentException(
+                    $this->translator->trans('eav.sort.field_not_sortable', ['%field%' => $field])
+                );
+            }
+
+            $this->applyAttributeSort(
+                $qb,
+                $rootAlias,
+                $metadata,
+                $direction,
+                $joinIndex++
+            );
+        }
+
+        if (!$sortedByIdExplicitly) {
+            $qb->addOrderBy(
+                sprintf('%s.%s', $rootAlias, $this->systemFieldRegistry->getDoctrineField('id')),
+                'DESC'
+            );
         }
     }
 
-    private function applyAttributeSort(QueryBuilder $qb, string $rootAlias, AttributeMetadata $metadata, string $direction, int $index): void
+    /**
+     * @return list<string>
+     */
+    private function collectRequestedAttributeCodes(ProductCollectionContext $context): array
     {
+        $codes = [];
+
+        foreach ($context->sorts as $sort) {
+            $field = $sort['field'];
+
+            if ($this->systemFieldRegistry->isSystemField($field)) {
+                continue;
+            }
+
+            $codes[] = $field;
+        }
+
+        return array_values(array_unique($codes));
+    }
+
+    private function applyAttributeSort(
+        QueryBuilder $qb,
+        string $rootAlias,
+        AttributeMetadata $metadata,
+        string $direction,
+        int $index
+    ): void {
         $valueEntityClass = $this->attributeTypeRegistry->getValueEntityClass($metadata->type);
         $joinAlias = 'sort_' . $index;
         $attributeParameter = 'sort_attribute_' . $index;
+        $sortSelectAlias = 'sort_value_' . $index;
 
         $qb
             ->leftJoin(
                 $valueEntityClass,
                 $joinAlias,
                 'WITH',
-                sprintf('%s.product = %s AND %s.attribute = :%s', $joinAlias, $rootAlias, $joinAlias, $attributeParameter),
+                sprintf(
+                    '%s.product = %s AND %s.attribute = :%s',
+                    $joinAlias,
+                    $rootAlias,
+                    $joinAlias,
+                    $attributeParameter
+                )
             )
             ->setParameter($attributeParameter, $metadata->id)
-            ->addOrderBy($joinAlias . '.value', $direction);
+            ->addSelect(sprintf('%s.value AS HIDDEN %s', $joinAlias, $sortSelectAlias))
+            ->addOrderBy($sortSelectAlias, $direction);
     }
 }

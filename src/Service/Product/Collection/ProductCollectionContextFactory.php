@@ -3,15 +3,20 @@ declare(strict_types=1);
 
 namespace App\Service\Product\Collection;
 
-final readonly class ProductCollectionContextFactory
+use Symfony\Contracts\Translation\TranslatorInterface;
+
+final class ProductCollectionContextFactory
 {
-    public function create(array $filters = []): ProductCollectionContext
+    public function __construct(
+        private TranslatorInterface $translator
+    ) {
+    }
+
+    public function createFromFilters(array $filters): ProductCollectionContext
     {
         $page = max(1, (int) ($filters['page'] ?? 1));
-        $limit = max(1, (int) ($filters['limit'] ?? 20));
-        $offset = array_key_exists('offset', $filters)
-            ? max(0, (int) $filters['offset'])
-            : ($page - 1) * $limit;
+        $limit = max(1, min(100, (int) ($filters['limit'] ?? 20)));
+        $offset = ($page - 1) * $limit;
 
         return new ProductCollectionContext(
             filter: $this->normalizeNullableString($filters['filter'] ?? null),
@@ -39,7 +44,7 @@ final readonly class ProductCollectionContextFactory
      */
     private function parseCommaSeparatedList(mixed $value): array
     {
-        if (!is_string($value)) {
+        if (!is_string($value) || trim($value) === '') {
             return [];
         }
 
@@ -61,11 +66,12 @@ final readonly class ProductCollectionContextFactory
      */
     private function parseSorts(mixed $value): array
     {
-        if (!is_string($value)) {
+        if (!is_string($value) || trim($value) === '') {
             return [];
         }
 
         $result = [];
+        $seen = [];
 
         foreach (explode(',', $value) as $part) {
             $part = trim($part);
@@ -85,6 +91,16 @@ final readonly class ProductCollectionContextFactory
             if ($field === '') {
                 continue;
             }
+
+            if (!preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $field)) {
+                throw new \InvalidArgumentException($this->translator->trans('product.collection.invalid_sort_field', ['%field%' => $field]));
+            }
+
+            if (isset($seen[$field])) {
+                continue;
+            }
+
+            $seen[$field] = true;
 
             $result[] = [
                 'field' => $field,

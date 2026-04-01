@@ -24,6 +24,11 @@ final class ProductCollectionContext
         return $this->selectedFields !== [];
     }
 
+    public function hasSorts(): bool
+    {
+        return $this->sorts !== [];
+    }
+
     public function shouldReturnAllFields(): bool
     {
         return $this->selectedFields === [] || in_array('*', $this->selectedFields, true);

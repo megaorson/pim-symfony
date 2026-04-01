@@ -3,12 +3,12 @@ declare(strict_types=1);
 
 namespace App\Service\Eav;
 
-use App\Service\Eav\Dto\AttributeMetadata;
+use App\Service\Product\Field\ProductCollectionFieldProvider;
 
-final class FilterFieldProvider
+final readonly class FilterFieldProvider
 {
     public function __construct(
-        private readonly AttributeMetadataProvider $metadataProvider
+        private ProductCollectionFieldProvider $fieldProvider,
     ) {
     }
 
@@ -17,10 +17,7 @@ final class FilterFieldProvider
      */
     public function getFilterableCodes(): array
     {
-        return array_map(
-            static fn(AttributeMetadata $attribute): string => $attribute->code,
-            $this->metadataProvider->getAllFilterable()
-        );
+        return $this->fieldProvider->getFilterableFields();
     }
 
     /**
@@ -28,9 +25,34 @@ final class FilterFieldProvider
      */
     public function getSelectableCodes(): array
     {
-        return array_map(
-            static fn(AttributeMetadata $attribute): string => $attribute->code,
-            $this->metadataProvider->getAllSelectable()
-        );
+        return $this->fieldProvider->getSelectableFields();
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function getSortableCodes(): array
+    {
+        return $this->fieldProvider->getSortableFields();
+    }
+
+    public function isFilterable(string $field): bool
+    {
+        return $this->fieldProvider->isFilterable($field);
+    }
+
+    public function isSelectable(string $field): bool
+    {
+        return $this->fieldProvider->isSelectable($field);
+    }
+
+    public function isSortable(string $field): bool
+    {
+        return $this->fieldProvider->isSortable($field);
+    }
+
+    public function isKnownField(string $field): bool
+    {
+        return $this->fieldProvider->isKnownField($field);
     }
 }

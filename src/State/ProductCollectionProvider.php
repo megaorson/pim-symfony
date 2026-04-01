@@ -29,9 +29,11 @@ final readonly class ProductCollectionProvider implements ProviderInterface
     public function provide(Operation $operation, array $uriVariables = [], array $context = []): object|array|null
     {
         $filters = is_array($context['filters'] ?? null) ? $context['filters'] : [];
-        $collectionContext = $this->contextFactory->create($filters);
+        $collectionContext = $this->contextFactory->createFromFilters($filters);
 
-        $qb = $this->productRepository->createQueryBuilder('p');
+        $qb = $this->productRepository
+            ->createQueryBuilder('p')
+            ->select('DISTINCT p');
 
         foreach ($this->collectionAppliers as $collectionApplier) {
             $collectionApplier->apply($qb, $collectionContext, 'p');
@@ -39,14 +41,14 @@ final readonly class ProductCollectionProvider implements ProviderInterface
 
         $countQb = clone $qb;
         $total = (int) $countQb
-            ->select('COUNT(DISTINCT p.id)')
+            ->resetDQLPart('select')
             ->resetDQLPart('orderBy')
+            ->select('COUNT(DISTINCT p.id)')
             ->getQuery()
             ->getSingleScalarResult();
 
         /** @var list<Product> $products */
         $products = $qb
-            ->select('DISTINCT p')
             ->setFirstResult($collectionContext->offset)
             ->setMaxResults($collectionContext->limit)
             ->getQuery()

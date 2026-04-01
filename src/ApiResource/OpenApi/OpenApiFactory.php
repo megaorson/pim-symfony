@@ -8,12 +8,14 @@ use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\OpenApi;
 use App\Service\Eav\FilterDocumentationBuilder;
+use App\Service\Eav\SortDocumentationBuilder;
 
 final class OpenApiFactory implements OpenApiFactoryInterface
 {
     public function __construct(
         private readonly OpenApiFactoryInterface $decorated,
-        private readonly FilterDocumentationBuilder $documentationBuilder
+        private readonly FilterDocumentationBuilder $documentationBuilder,
+        private readonly SortDocumentationBuilder $sortDocumentationBuilder,
     ) {
     }
 
@@ -40,7 +42,7 @@ final class OpenApiFactory implements OpenApiFactoryInterface
                 in: 'query',
                 description: $this->documentationBuilder->buildFilterDescription(),
                 schema: ['type' => 'string'],
-                example: $this->documentationBuilder->buildFilterExample()
+                example: $this->documentationBuilder->buildFilterExample(),
             );
 
             $parameters[] = new Parameter(
@@ -48,7 +50,15 @@ final class OpenApiFactory implements OpenApiFactoryInterface
                 in: 'query',
                 description: $this->documentationBuilder->buildSelectDescription(),
                 schema: ['type' => 'string'],
-                example: $this->documentationBuilder->buildSelectExample()
+                example: $this->documentationBuilder->buildSelectExample(),
+            );
+
+            $parameters[] = new Parameter(
+                name: 'sort',
+                in: 'query',
+                description: $this->sortDocumentationBuilder->buildSortDescription(),
+                schema: ['type' => 'string'],
+                example: $this->sortDocumentationBuilder->buildSortExample(),
             );
 
             $updatedGet = $get->withParameters($parameters);
