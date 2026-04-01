@@ -1,8 +1,17 @@
-# PIM Symfony Project
+# PIM Symfony (EAV + API Platform)
+
+🚀 **Senior-level backend architecture project**
 
 A Product Information Management (PIM) system built with **Symfony + API Platform + EAV architecture**.
 
-This project demonstrates a scalable, API-first backend with dynamic attributes, a custom filtering DSL, and clean architecture principles.
+This project demonstrates a **scalable, API-first backend** with:
+
+- dynamic attributes (EAV)
+- custom filtering DSL
+- field selection (`select`)
+- multi-field sorting (`sort`)
+- pagination
+- clean modular architecture
 
 ---
 
@@ -12,7 +21,7 @@ This system provides a centralized platform for managing product data with a fle
 
 Unlike traditional systems with fixed columns, this project uses a dynamic attribute model (EAV), allowing products to have different structures without database changes.
 
-The system is designed with an **API-first approach**, where all business logic is exposed via REST endpoints.
+The system is designed with an **API-first approach**, where all business logic is exposed via REST endpoints and documented via OpenAPI.
 
 ---
 
@@ -20,10 +29,10 @@ The system is designed with an **API-first approach**, where all business logic 
 
 Products are built using a dynamic attribute system:
 
-- Custom attributes (color, size, material, etc.)
+- Custom attributes (color, size, material, price, etc.)
 - Multiple data types (text, decimal, int, image)
 - No schema changes required for new attributes
-- Fully queryable via custom DSL filter
+- Fully queryable via DSL filter, select and sort
 
 ---
 
@@ -31,8 +40,8 @@ Products are built using a dynamic attribute system:
 
 ### Core Entities
 
-- **Product** — base entity (id, sku)
-- **ProductAttribute** — attribute definition (code, type)
+- **Product** — base entity (`id`, `sku`, `createdAt`, `updatedAt`)
+- **ProductAttribute** — attribute definition (`code`, `type`)
 
 ### Value Storage (Type-based)
 
@@ -45,9 +54,9 @@ Values are stored in separate tables depending on type:
 
 ---
 
-## ⚡ Filtering (Custom DSL)
+## ⚡ Query Capabilities
 
-### Examples
+### Filtering (DSL)
 
 ```http
 GET /api/products?filter=price GT 1000
@@ -56,21 +65,52 @@ GET /api/products?filter=price GT 1000 OR price LT 10
 GET /api/products?filter=sku BEGINS 'A' AND price GT 1000
 ```
 
-### Supported operators
-
-- `EQ`
-- `NE`
-- `GT`, `GE`, `LT`, `LE`
-- `BEGINS`
-- `IN`
-
-### Features
-
-- Works with base fields (`sku`, `id`)
-- Works with EAV attributes (`price`, `name`, etc.)
-- Supports logical groups (`AND`, `OR`)
+Features:
 - AST-based parsing
+- Works with system + EAV fields
+- AND / OR / parentheses
 - Converts DSL → Doctrine QueryBuilder
+
+---
+
+### Sorting
+
+```http
+?sort=price
+?sort=-price
+?sort=price,sku
+?sort=sku,-price
+```
+
+Rules:
+- left-to-right priority
+- first field = highest priority
+- next fields = tie-breakers
+- supports system + EAV fields
+- stable sorting via fallback (`id DESC`)
+- NULL-safe ordering
+
+---
+
+### Field Selection
+
+```http
+?select=id,sku,price
+```
+
+- reduces payload size
+- `id` stays in root
+- other fields go into `attributes`
+
+---
+
+### Pagination
+
+```http
+?page=1&limit=20
+```
+
+Internally converted to offset-based pagination.
 
 ---
 
@@ -86,27 +126,22 @@ PATCH  /api/products/{id}
 DELETE /api/products/{id}
 ```
 
-### Pagination
+---
 
-```http
-GET /api/products?limit=20&offset=0
-```
-
-### Example Response
+## 📦 Example Response
 
 ```json
 {
   "items": [
     {
       "id": 1,
-      "sku": "SKU-001",
       "attributes": {
-        "name": "Apple",
+        "sku": "SKU-001",
         "price": 1200
       }
     }
   ],
-  "total": 57,
+  "totalItems": 57,
   "limit": 20,
   "offset": 0
 }
@@ -117,55 +152,79 @@ GET /api/products?limit=20&offset=0
 ## 🧱 Architecture
 
 ```
-┌───────────────────────┐
-│     ApiResource       │  → API contract (DTO)
-└──────────┬────────────┘
-           │
-┌──────────▼────────────┐
-│        State          │  → business logic (Provider / Processor)
-└──────────┬────────────┘
-           │
-┌──────────▼────────────┐
-│       Service         │  → EAV + filtering logic
-└──────────┬────────────┘
-           │
-┌──────────▼────────────┐
-│       Entity          │  → Doctrine ORM
-└───────────────────────┘
+Request
+  ↓
+ProductCollectionContextFactory
+  ↓
+ProductCollectionContext
+  ↓
+Collection Appliers
+  ├── ProductFilterApplier
+  ├── ProductSelectApplier
+  └── ProductSortApplier
+  ↓
+Doctrine QueryBuilder
+  ↓
+ProductCollectionProvider
+  ↓
+ResultMapper
+  ↓
+API Response
 ```
 
 ---
 
-## 🔍 How Filtering Works (DSL → SQL)
+## 🔍 DSL → SQL Flow
 
 ```
-Filter string (DSL)
-        ↓
+Filter string
+    ↓
+Tokenizer
+    ↓
 Parser
-        ↓
-AST (Abstract Syntax Tree)
-        ↓
+    ↓
+AST
+    ↓
 SmartEavFilterApplier
-        ↓
+    ↓
 Doctrine QueryBuilder
-        ↓
+    ↓
 SQL
 ```
 
-### Example
+---
 
-DSL:
+## 🧩 Field System (Key Architecture)
 
-```
-price GT 1000 AND sku BEGINS 'A'
-```
+- **ProductSystemFieldRegistry** → system fields
+- **AttributeMetadataProvider** → EAV metadata
+- **ProductCollectionFieldProvider** → unified API field model
 
-Conceptual SQL:
+This eliminates duplication and keeps:
 
-```sql
-WHERE price_value.value > 1000
-AND product.sku LIKE 'A%'
-```
+- validation
+- documentation
+- runtime logic
+
+fully consistent.
+
+---
+
+## ⚡ Performance Considerations
+
+Current strategy:
+- DISTINCT + JOIN + ORDER BY
+- hidden fields for sorting
+- optimized select
+
+Trade-offs:
+- complex joins for EAV
+- heavy queries under large datasets
+
+Planned improvements:
+- 2-step pagination (IDs → entities)
+- metadata caching
+- indexing strategy
 
 ---
 
@@ -173,29 +232,30 @@ AND product.sku LIKE 'A%'
 
 - Dynamic EAV attributes
 - Custom DSL filtering engine
+- Select / Sort / Pagination
 - API Platform integration
 - DTO-based API
-- Pagination (limit/offset)
-- Clean architecture
-- Admin panel (EasyAdmin)
+- OpenAPI / Swagger docs
+- EasyAdmin backend
+- Translations support
 
 ---
 
 ## ⚠️ Trade-offs
 
-- Complex JOIN queries
-- Requires indexing
-- Potential N+1 issues
+- Complex SQL queries
+- Requires indexing strategy
+- EAV complexity under high load
 
 ---
 
 ## 🔮 Roadmap
 
-- Sorting (`?sort=price DESC`)
-- Bulk attribute loading
-- Attribute groups
-- Caching layer
+- Production-grade pagination (2-step)
+- Attribute capabilities (filterable/sortable/selectable)
+- Attribute groups / families
 - Multi-tenant support
+- Search integration (Elastic/OpenSearch)
 
 ---
 
@@ -205,8 +265,9 @@ AND product.sku LIKE 'A%'
 - Symfony
 - API Platform
 - Doctrine ORM
+- MySQL
 - EasyAdmin
-- Tailwind CSS
+- OpenAPI / Swagger
 
 ---
 
@@ -230,10 +291,11 @@ php bin/console app:create-admin email password
 
 This project demonstrates:
 
-- EAV implementation
-- DSL filtering engine
-- API-first architecture
-- Scalable backend design
+- advanced backend architecture
+- EAV modeling
+- custom query language (DSL)
+- API-first design
+- scalable and extensible system design
 
 ---
 
