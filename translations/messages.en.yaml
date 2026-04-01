@@ -39,6 +39,9 @@ product:
     attribute:
         not_found: 'Attribute "%code%" was not found.'
 
+api_error:
+    title: 'Bad request'
+
 security:
     logout:
         intercepted_by_firewall: 'This method can stay blank because the logout key on your firewall intercepts it.'

@@ -65,3 +65,7 @@ services:
             $valueEntityMap: '%app.eav_value_entity_map%'
         tags:
             - { name: doctrine.event_listener, event: onFlush }
+
+    App\Subscriber\ApiExceptionSubscriber:
+        tags:
+            - { name: kernel.event_subscriber }

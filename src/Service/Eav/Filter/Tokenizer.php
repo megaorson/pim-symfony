@@ -4,6 +4,7 @@ declare(strict_types=1);
 namespace App\Service\Eav\Filter;
 
 use Symfony\Contracts\Translation\TranslatorInterface;
+use App\Exception\Api\InvalidFilterException;
 
 final class Tokenizer
 {
@@ -74,7 +75,7 @@ final class Tokenizer
                     $value = $this->readValue($upperWord);
 
                     if ($value === '') {
-                        throw new \InvalidArgumentException($this->translator->trans(
+                        throw new InvalidFilterException($this->translator->trans(
                             'eav.filter.expected_value_after_operator',
                             [
                                 '%operator%' => $upperWord,
@@ -91,7 +92,7 @@ final class Tokenizer
                 continue;
             }
 
-            throw new \InvalidArgumentException($this->translator->trans(
+            throw new InvalidFilterException($this->translator->trans(
                 'eav.filter.unexpected_character',
                 [
                     '%character%' => $char,
@@ -139,7 +140,7 @@ final class Tokenizer
         $this->skipWhitespace();
 
         if ($this->isEnd() || $this->currentChar() !== '(') {
-            throw new \InvalidArgumentException($this->translator->trans(
+            throw new InvalidFilterException($this->translator->trans(
                 'eav.filter.expected_open_parenthesis_after_in',
                 ['%position%' => (string) $this->position]
             ));
@@ -195,7 +196,7 @@ final class Tokenizer
         }
 
         if ($depth !== 0) {
-            throw new \InvalidArgumentException($this->translator->trans(
+            throw new InvalidFilterException($this->translator->trans(
                 'eav.filter.unterminated_in_expression',
                 ['%position%' => (string) $start]
             ));
@@ -232,7 +233,7 @@ final class Tokenizer
             $this->position++;
         }
 
-        throw new \InvalidArgumentException($this->translator->trans('eav.filter.unterminated_quoted_string'));
+        throw new InvalidFilterException($this->translator->trans('eav.filter.unterminated_quoted_string'));
     }
 
     private function readWord(): string

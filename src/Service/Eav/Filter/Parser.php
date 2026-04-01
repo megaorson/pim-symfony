@@ -7,6 +7,7 @@ use App\Service\Eav\Filter\Ast\ConditionNode;
 use App\Service\Eav\Filter\Ast\GroupNode;
 use App\Service\Eav\Filter\Ast\Node;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use App\Exception\Api\InvalidFilterException;
 
 final class Parser
 {
@@ -89,7 +90,7 @@ final class Parser
         $token = $this->current();
 
         if ($token->type !== $type) {
-            throw new \InvalidArgumentException($this->translator->trans(
+            throw new InvalidFilterException($this->translator->trans(
                 'eav.filter.expected_token',
                 [
                     '%expected%' => $type,

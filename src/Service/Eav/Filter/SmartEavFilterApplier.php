@@ -17,6 +17,7 @@ use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use App\Exception\Api\InvalidFilterException;
 
 #[AutoconfigureTag('app.product.collection_applier')]
 #[AsTaggedItem(priority: 100)]
@@ -65,7 +66,7 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
 
         foreach ($codes as $code) {
             if (!isset($metadataMap[$code]) && !isset(self::BASE_FIELDS[$code])) {
-                throw new \InvalidArgumentException($this->translator->trans('eav.filter.unknown_field', ['%field%' => $code]));
+                throw new InvalidFilterException($this->translator->trans('eav.filter.unknown_field', ['%field%' => $code]));
             }
         }
 
@@ -135,7 +136,7 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
         if ($condition->operator === 'IN') {
             $values = $this->parseInValues($condition->value, $type);
             if ($values === []) {
-                throw new \InvalidArgumentException($this->translator->trans('eav.filter.empty_in_values', ['%field%' => $condition->field]));
+                throw new InvalidFilterException($this->translator->trans('eav.filter.empty_in_values', ['%field%' => $condition->field]));
             }
             return $values;
         }
@@ -194,7 +195,7 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
             'LE' => sprintf('%s <= %s', $fieldPath, $parameterName),
             'BEGINS' => sprintf('%s LIKE %s', $fieldPath, $parameterName),
             'IN' => sprintf('%s IN (%s)', $fieldPath, $parameterName),
-            default => throw new \InvalidArgumentException($this->translator->trans('eav.filter.unsupported_operator', ['%operator%' => $operator])),
+            default => throw new InvalidFilterException($this->translator->trans('eav.filter.unsupported_operator', ['%operator%' => $operator])),
         };
     }
 
@@ -220,7 +221,7 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
         if ($condition->operator === 'IN') {
             $values = $this->parseInValues($condition->value, $metadata->type);
             if ($values === []) {
-                throw new \InvalidArgumentException($this->translator->trans('eav.filter.empty_in_values', ['%field%' => $condition->field]));
+                throw new InvalidFilterException($this->translator->trans('eav.filter.empty_in_values', ['%field%' => $condition->field]));
             }
             return $values;
         }
@@ -240,7 +241,7 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
     {
         $value = trim($value);
         if (!str_starts_with($value, '(') || !str_ends_with($value, ')')) {
-            throw new \InvalidArgumentException($this->translator->trans('eav.filter.invalid_in_value', ['%value%' => $value]));
+            throw new InvalidFilterException($this->translator->trans('eav.filter.invalid_in_value', ['%value%' => $value]));
         }
 
         $inner = trim(substr($value, 1, -1));
@@ -321,7 +322,7 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
     private function assertComparableScalarType(string $field, string $operator, string $type): void
     {
         if (!in_array($type, ['int', 'decimal', 'float', 'boolean'], true)) {
-            throw new \InvalidArgumentException($this->translator->trans('eav.filter.non_numeric_operator', ['%operator%' => $operator, '%field%' => $field, '%type%' => $type]));
+            throw new InvalidFilterException($this->translator->trans('eav.filter.non_numeric_operator', ['%operator%' => $operator, '%field%' => $field, '%type%' => $type]));
         }
     }
 

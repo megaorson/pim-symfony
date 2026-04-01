@@ -9,6 +9,7 @@ use App\Service\Eav\Dto\AttributeMetadata;
 use App\Service\Product\Field\ProductSystemFieldRegistry;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use App\Exception\Api\InvalidSortException;
 
 final class ProductSortApplier implements CollectionApplierInterface
 {
@@ -47,7 +48,7 @@ final class ProductSortApplier implements CollectionApplierInterface
 
             if ($this->systemFieldRegistry->isSystemField($field)) {
                 if (!$this->systemFieldRegistry->isSortable($field)) {
-                    throw new \InvalidArgumentException(
+                    throw new InvalidSortException(
                         $this->translator->trans('eav.sort.field_not_sortable', ['%field%' => $field])
                     );
                 }
@@ -63,13 +64,13 @@ final class ProductSortApplier implements CollectionApplierInterface
             $metadata = $metadataMap[$field] ?? null;
 
             if (!$metadata instanceof AttributeMetadata) {
-                throw new \InvalidArgumentException(
+                throw new InvalidSortException(
                     $this->translator->trans('eav.sort.unknown_field', ['%field%' => $field])
                 );
             }
 
             if (!$metadata->sortable) {
-                throw new \InvalidArgumentException(
+                throw new InvalidSortException(
                     $this->translator->trans('eav.sort.field_not_sortable', ['%field%' => $field])
                 );
             }

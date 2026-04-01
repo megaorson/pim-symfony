@@ -10,6 +10,7 @@ use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use App\Exception\Api\InvalidSelectException;
 
 #[AutoconfigureTag('app.product.collection_applier')]
 #[AsTaggedItem(priority: 200)]
@@ -33,7 +34,7 @@ final readonly class ProductSelectApplier implements CollectionApplierInterface
         foreach ($context->selectedFields as $field) {
             if ($this->systemFieldRegistry->isSystemField($field)) {
                 if (!$this->systemFieldRegistry->isSelectable($field)) {
-                    throw new \InvalidArgumentException(
+                    throw new InvalidSelectException(
                         $this->translator->trans('eav.select.field_not_selectable', ['%field%' => $field])
                     );
                 }
@@ -55,13 +56,13 @@ final readonly class ProductSelectApplier implements CollectionApplierInterface
             $metadata = $metadataMap[$code] ?? null;
 
             if (!$metadata instanceof AttributeMetadata) {
-                throw new \InvalidArgumentException(
+                throw new InvalidSelectException(
                     $this->translator->trans('eav.select.unknown_field', ['%field%' => $code])
                 );
             }
 
             if (!$metadata->selectable) {
-                throw new \InvalidArgumentException(
+                throw new InvalidSelectException(
                     $this->translator->trans('eav.select.field_not_selectable', ['%field%' => $code])
                 );
             }
