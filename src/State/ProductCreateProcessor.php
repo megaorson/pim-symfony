@@ -1,0 +1,48 @@
+<?php
+declare(strict_types=1);
+
+namespace App\State;
+
+use ApiPlatform\Metadata\Operation;
+use ApiPlatform\State\ProcessorInterface;
+use App\ApiResource\Dto\ProductInput;
+use App\ApiResource\Dto\ProductOutput;
+use App\Entity\Product;
+use App\Service\Eav\AttributeValueWriter;
+use App\Service\Product\Factory\ProductOutputContextFactory;
+use App\Service\Product\Factory\ProductOutputFactory;
+use App\Service\ProductAttributeLocator;
+use Doctrine\ORM\EntityManagerInterface;
+
+final class ProductCreateProcessor implements ProcessorInterface
+{
+    public function __construct(
+        private readonly EntityManagerInterface $em,
+        private readonly ProductAttributeLocator $productAttributeLocator,
+        private readonly AttributeValueWriter $attributeValueWriter,
+        private readonly ProductOutputFactory $productOutputFactory,
+        private readonly ProductOutputContextFactory $productOutputContextFactory,
+    ) {
+    }
+
+    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ProductOutput
+    {
+        /** @var ProductInput $data */
+        $product = new Product();
+        $product->setSku(trim($data->sku));
+
+        $this->em->persist($product);
+
+        foreach ($data->attributes as $code => $value) {
+            $attribute = $this->productAttributeLocator->getByCode((string) $code);
+            $this->attributeValueWriter->write($product, $attribute, $value);
+        }
+
+        $this->em->flush();
+
+        return $this->productOutputFactory->create(
+            $product,
+            $this->productOutputContextFactory->createAllFieldsContext()
+        );
+    }
+}

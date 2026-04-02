@@ -5,17 +5,14 @@ namespace App\ApiResource\Dto;
 
 use Symfony\Component\Validator\Constraints as Assert;
 
-final class ProductInput
+final class ProductPatchInput
 {
-    #[Assert\NotBlank]
     #[Assert\Length(max: 100)]
-    public string $sku = '';
+    public ?string $sku = null;
 
     /**
      * @var array<string, mixed>
      */
-    #[Assert\NotNull]
     #[Assert\Type('array')]
-    #[Assert\Count(min: 1)]
     public array $attributes = [];
 }

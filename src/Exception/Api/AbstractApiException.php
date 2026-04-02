@@ -7,11 +7,12 @@ abstract class AbstractApiException extends \RuntimeException
 {
     public function __construct(
         string $message,
-        protected int $status = 400,
-        protected ?string $type = null,
-        protected array $context = []
+        private readonly int $status = 400,
+        private readonly ?string $type = null,
+        private readonly array $context = [],
+        ?\Throwable $previous = null,
     ) {
-        parent::__construct($message);
+        parent::__construct($message, 0, $previous);
     }
 
     public function getStatus(): int

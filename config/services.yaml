@@ -69,3 +69,11 @@ services:
     App\Subscriber\ApiExceptionSubscriber:
         tags:
             - { name: kernel.event_subscriber }
+
+    App\Service\Eav\AttributeValueHandler\:
+        resource: '../src/Service/Eav/AttributeValueHandler/'
+        tags: [ 'app.attribute_value_handler' ]
+
+    App\Service\Eav\AttributeValueHandlerRegistry:
+        arguments:
+            $handlers: !tagged_iterator app.attribute_value_handler

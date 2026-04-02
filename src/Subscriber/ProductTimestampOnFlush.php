@@ -37,6 +37,10 @@ final class ProductTimestampOnFlush
             $this->collectProduct($entity, $productsToTouch);
         }
 
+        foreach ($uow->getScheduledEntityDeletions() as $entity) {
+            $this->collectProduct($entity, $productsToTouch);
+        }
+
         if ($productsToTouch === []) {
             return;
         }

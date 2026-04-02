@@ -32,6 +32,8 @@ console:
         success: 'Admin user created successfully.'
 
 product:
+    create:
+        duplicate_sku: 'Product with SKU "%sku%" already exists.'
     collection:
         invalid_page: 'Invalid "page" value "%value%". Page must be an integer greater than or equal to 1.'
         invalid_limit: 'Invalid "limit" value "%value%". Limit must be an integer between %min% and %max%.'
@@ -41,6 +43,12 @@ product:
         unknown: 'Unknown system field "%s".'
     attribute:
         not_found: 'Attribute "%code%" was not found.'
+    invalid:
+        expected_string: 'Attribute "%code%" must be a non-empty string.'
+        empty_string: 'Attribute "%code%" cannot be empty.'
+        expected_int: 'Attribute "%code%" must be an integer.'
+        expected_decimal: 'Attribute "%code%" must be a decimal number.'
+        unsupported_type: 'Unsupported attribute type "%type%" for attribute "%code%".'
 
 api_error:
     title: 'Bad request'

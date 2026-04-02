@@ -3,7 +3,6 @@ declare(strict_types=1);
 
 namespace App\ApiResource;
 
-
 use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\Get;
@@ -15,9 +14,12 @@ use ApiPlatform\OpenApi\Model\Parameter;
 use App\ApiResource\Dto\ProductCollectionOutput;
 use App\ApiResource\Dto\ProductInput;
 use App\ApiResource\Dto\ProductOutput;
+use App\ApiResource\Dto\ProductPatchInput;
 use App\State\ProductCollectionProvider;
-use App\State\ProductProcessor;
+use App\State\ProductCreateProcessor;
+use App\State\ProductDeleteProcessor;
 use App\State\ProductProvider;
+use App\State\ProductUpdateProcessor;
 
 #[ApiResource(
     shortName: 'Product',
@@ -49,22 +51,23 @@ use App\State\ProductProvider;
         new Post(
             uriTemplate: '/products',
             input: ProductInput::class,
-            processor: ProductProcessor::class,
+            processor: ProductCreateProcessor::class,
             output: ProductOutput::class
         ),
         new Patch(
             uriTemplate: '/products/{id}',
-            input: ProductInput::class,
-            processor: ProductProcessor::class,
-            output: ProductOutput::class
+            input: ProductPatchInput::class,
+            processor: ProductUpdateProcessor::class,
+            output: ProductOutput::class,
+            read: false
         ),
         new Delete(
             uriTemplate: '/products/{id}',
-            processor: ProductProcessor::class
+            processor: ProductDeleteProcessor::class,
+            read: false
         ),
     ]
 )]
 class ProductApiResource
 {
-
 }
