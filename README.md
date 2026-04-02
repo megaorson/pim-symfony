@@ -1,7 +1,5 @@
 # PIM Symfony (EAV + API Platform)
 
-🚀 **Senior-level backend architecture project**
-
 A Product Information Management (PIM) system built with **Symfony + API Platform + EAV architecture**.
 
 This project demonstrates a **scalable, API-first backend** with:
