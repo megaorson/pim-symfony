@@ -3,11 +3,11 @@ declare(strict_types=1);
 
 namespace App\Service\Eav\Filter;
 
+use App\Exception\Api\InvalidFilterException;
 use App\Service\Eav\Filter\Ast\ConditionNode;
 use App\Service\Eav\Filter\Ast\GroupNode;
 use App\Service\Eav\Filter\Ast\Node;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use App\Exception\Api\InvalidFilterException;
 
 final class Parser
 {
@@ -16,48 +16,73 @@ final class Parser
     private int $position = 0;
 
     public function __construct(
-        private readonly Tokenizer $tokenizer,
-        private readonly TranslatorInterface $translator
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
-    public function parse(string $input): Node
+    /**
+     * @param list<Token> $tokens
+     */
+    public function parse(array $tokens): Node
     {
-        $this->tokens = $this->tokenizer->tokenize($input);
+        $this->tokens = $tokens;
         $this->position = 0;
 
-        $node = $this->parseOrExpression();
-        $this->expect(Token::EOF);
+        $node = $this->parseExpression();
+
+        if ($this->current()->type !== Token::EOF) {
+            $token = $this->current();
+
+            throw new InvalidFilterException(
+                $this->translator->trans('eav.filter.unexpected_token', [
+                    '%token%' => $token->value !== '' ? $token->value : $token->type,
+                    '%position%' => (string) $token->position,
+                ])
+            );
+        }
 
         return $node;
     }
 
-    private function parseOrExpression(): Node
+    private function parseExpression(): Node
     {
-        $nodes = [$this->parseAndExpression()];
+        return $this->parseOr();
+    }
+
+    private function parseOr(): Node
+    {
+        $nodes = [$this->parseAnd()];
 
         while ($this->match(Token::OR)) {
-            $nodes[] = $this->parseAndExpression();
+            $nodes[] = $this->parseAnd();
         }
 
-        return count($nodes) === 1 ? $nodes[0] : new GroupNode('OR', $nodes);
+        if (count($nodes) === 1) {
+            return $nodes[0];
+        }
+
+        return new GroupNode('OR', $nodes);
     }
 
-    private function parseAndExpression(): Node
+    private function parseAnd(): Node
     {
-        $nodes = [$this->parsePrimary()];
+        $nodes = [$this->parseFactor()];
 
         while ($this->match(Token::AND)) {
-            $nodes[] = $this->parsePrimary();
+            $nodes[] = $this->parseFactor();
         }
 
-        return count($nodes) === 1 ? $nodes[0] : new GroupNode('AND', $nodes);
+        if (count($nodes) === 1) {
+            return $nodes[0];
+        }
+
+        return new GroupNode('AND', $nodes);
     }
 
-    private function parsePrimary(): Node
+    private function parseFactor(): Node
     {
         if ($this->match(Token::LPAREN)) {
-            $node = $this->parseOrExpression();
+            $node = $this->parseExpression();
             $this->expect(Token::RPAREN);
 
             return $node;
@@ -68,21 +93,51 @@ final class Parser
 
     private function parseCondition(): ConditionNode
     {
-        $field = $this->expect(Token::IDENTIFIER)->value;
-        $operator = $this->expect(Token::OPERATOR)->value;
-        $value = $this->expect(Token::VALUE)->value;
+        $fieldToken = $this->expect(Token::IDENTIFIER);
+        $field = $fieldToken->value;
 
-        return new ConditionNode($field, $operator, $value);
+        if ($this->match(Token::IN)) {
+            $this->expect(Token::LPAREN);
+            $values = $this->parseInValues();
+            $this->expect(Token::RPAREN);
+
+            return new ConditionNode($field, 'IN', '(' . implode(',', $values) . ')');
+        }
+
+        $operatorToken = $this->expect(Token::OPERATOR);
+        $valueToken = $this->expect(Token::VALUE);
+
+        return new ConditionNode(
+            $field,
+            $operatorToken->value,
+            $valueToken->value,
+        );
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function parseInValues(): array
+    {
+        $values = [];
+        $values[] = $this->expect(Token::VALUE)->value;
+
+        while ($this->match(Token::COMMA)) {
+            $values[] = $this->expect(Token::VALUE)->value;
+        }
+
+        return $values;
     }
 
     private function match(string $type): bool
     {
-        if ($this->current()->type === $type) {
-            $this->position++;
-            return true;
+        if ($this->current()->type !== $type) {
+            return false;
         }
 
-        return false;
+        $this->position++;
+
+        return true;
     }
 
     private function expect(string $type): Token
@@ -90,14 +145,13 @@ final class Parser
         $token = $this->current();
 
         if ($token->type !== $type) {
-            throw new InvalidFilterException($this->translator->trans(
-                'eav.filter.expected_token',
-                [
+            throw new InvalidFilterException(
+                $this->translator->trans('eav.filter.expected_token', [
                     '%expected%' => $type,
                     '%actual%' => $token->type,
                     '%position%' => (string) $token->position,
-                ]
-            ));
+                ])
+            );
         }
 
         $this->position++;

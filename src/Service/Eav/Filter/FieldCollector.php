@@ -15,25 +15,28 @@ final class FieldCollector
     public function collect(Node $node): array
     {
         $fields = [];
-        $this->walk($node, $fields);
+        $this->collectFromNode($node, $fields);
 
-        return array_values(array_unique($fields));
+        return array_values(array_keys($fields));
     }
 
     /**
-     * @param array<int, string> $fields
+     * @param array<string, true> $fields
      */
-    private function walk(Node $node, array &$fields): void
+    private function collectFromNode(Node $node, array &$fields): void
     {
         if ($node instanceof ConditionNode) {
-            $fields[] = $node->field;
+            $fields[$node->field] = true;
+
             return;
         }
 
-        if ($node instanceof GroupNode) {
-            foreach ($node->children as $child) {
-                $this->walk($child, $fields);
-            }
+        if (!$node instanceof GroupNode) {
+            return;
+        }
+
+        foreach ($node->children as $child) {
+            $this->collectFromNode($child, $fields);
         }
     }
 }

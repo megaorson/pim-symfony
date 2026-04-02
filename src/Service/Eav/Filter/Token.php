@@ -10,6 +10,8 @@ final class Token
     public const VALUE = 'VALUE';
     public const AND = 'AND';
     public const OR = 'OR';
+    public const IN = 'IN';
+    public const COMMA = 'COMMA';
     public const LPAREN = 'LPAREN';
     public const RPAREN = 'RPAREN';
     public const EOF = 'EOF';

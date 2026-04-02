@@ -36,6 +36,68 @@ Products are built using a dynamic attribute system:
 
 ---
 
+## 🧠 Filter DSL Design (Parser Architecture)
+
+The filtering system is implemented as a custom **domain-specific language (DSL)**.
+
+The architecture follows a classic:
+
+string → tokens → AST → execution
+
+This approach is inspired by expression parsing techniques described in the book *The C++ Programming Language* by Bjarne Stroustrup (chapter about building a calculator).
+
+In that example, mathematical expressions like:
+
+2 + 3 * 5
+
+are parsed using a recursive descent parser and evaluated via a syntax tree.
+
+### In this project
+
+The same idea is applied to filtering:
+
+price > 100 AND sku ~ "test"
+
+is processed as:
+
+string → tokens → AST → Doctrine QueryBuilder
+
+### Components
+
+- **Tokenizer**
+    - Converts string into tokens (IDENTIFIER, OPERATOR, VALUE, AND, OR, etc.)
+
+- **Parser**
+    - Builds an AST using recursive descent parsing
+
+- **AST**
+    - `ConditionNode` — single condition
+    - `GroupNode` — logical grouping (AND / OR)
+
+- **SmartEavFilterApplier**
+    - Traverses AST and builds Doctrine QueryBuilder
+
+### Example
+
+Filter:
+
+price > 100 AND sku ~ "test"
+
+AST:
+
+AND
+├── Condition(price > 100)
+└── Condition(sku BEGINS "test")
+
+### Why this approach
+
+- Supports complex expressions (AND / OR / nesting)
+- Separates parsing from execution
+- Extensible (new operators, functions)
+- Enables clean validation and error handling (400 instead of 500)
+
+---
+
 ## 🧠 Data Model (EAV Pattern)
 
 ### Core Entities
@@ -59,10 +121,10 @@ Values are stored in separate tables depending on type:
 ### Filtering (DSL)
 
 ```http
-GET /api/products?filter=price GT 1000
-GET /api/products?filter=sku BEGINS 'A'
-GET /api/products?filter=price GT 1000 OR price LT 10
-GET /api/products?filter=sku BEGINS 'A' AND price GT 1000
+GET /api/products?filter=price>1000
+GET /api/products?filter=sku~'A'
+GET /api/products?filter=price>1000 OR price<10
+GET /api/products?filter=sku~'A' AND price>1000
 ```
 
 Features:
@@ -132,18 +194,18 @@ DELETE /api/products/{id}
 
 ```json
 {
-  "items": [
-    {
-      "id": 1,
-      "attributes": {
-        "sku": "SKU-001",
-        "price": 1200
-      }
-    }
-  ],
-  "totalItems": 57,
-  "limit": 20,
-  "offset": 0
+    "items": [
+        {
+            "id": 1,
+            "attributes": {
+                "sku": "SKU-001",
+                "price": 1200
+            }
+        }
+    ],
+    "totalItems": 57,
+    "limit": 20,
+    "offset": 0
 }
 ```
 

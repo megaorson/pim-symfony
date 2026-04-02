@@ -3,20 +3,20 @@ declare(strict_types=1);
 
 namespace App\Service\Product\Collection;
 
+use App\Exception\Api\InvalidSortException;
 use App\Service\Eav\AttributeMetadataProvider;
 use App\Service\Eav\AttributeTypeRegistry;
 use App\Service\Eav\Dto\AttributeMetadata;
 use App\Service\Product\Field\ProductSystemFieldRegistry;
 use Doctrine\ORM\QueryBuilder;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use App\Exception\Api\InvalidSortException;
 
 final class ProductSortApplier implements CollectionApplierInterface
 {
     public function __construct(
-        private readonly ProductSystemFieldRegistry $systemFieldRegistry,
         private readonly AttributeMetadataProvider $attributeMetadataProvider,
         private readonly AttributeTypeRegistry $attributeTypeRegistry,
+        private readonly ProductSystemFieldRegistry $systemFieldRegistry,
         private readonly TranslatorInterface $translator,
     ) {
     }
@@ -75,13 +75,7 @@ final class ProductSortApplier implements CollectionApplierInterface
                 );
             }
 
-            $this->applyAttributeSort(
-                $qb,
-                $rootAlias,
-                $metadata,
-                $direction,
-                $joinIndex++
-            );
+            $this->applyAttributeSort($qb, $rootAlias, $metadata, $direction, $joinIndex++);
         }
 
         if (!$sortedByIdExplicitly) {

@@ -33,7 +33,10 @@ console:
 
 product:
     collection:
-        invalid_sort_field: 'Invalid sort field "%s".'
+        invalid_page: 'Invalid "page" value "%value%". Page must be an integer greater than or equal to 1.'
+        invalid_limit: 'Invalid "limit" value "%value%". Limit must be an integer between %min% and %max%.'
+        invalid_select_field: 'Invalid select field "%field%".'
+        invalid_sort_field: 'Invalid sort field "%field%".'
     field:
         unknown: 'Unknown system field "%s".'
     attribute:

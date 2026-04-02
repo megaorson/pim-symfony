@@ -3,23 +3,19 @@ declare(strict_types=1);
 
 namespace App\Service\Product\Collection;
 
+use App\Exception\Api\InvalidSelectException;
 use App\Service\Eav\AttributeMetadataProvider;
 use App\Service\Eav\Dto\AttributeMetadata;
 use App\Service\Product\Field\ProductSystemFieldRegistry;
 use Doctrine\ORM\QueryBuilder;
-use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
-use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use App\Exception\Api\InvalidSelectException;
 
-#[AutoconfigureTag('app.product.collection_applier')]
-#[AsTaggedItem(priority: 200)]
-final readonly class ProductSelectApplier implements CollectionApplierInterface
+final class ProductSelectApplier implements CollectionApplierInterface
 {
     public function __construct(
-        private ProductSystemFieldRegistry $systemFieldRegistry,
-        private AttributeMetadataProvider $attributeMetadataProvider,
-        private TranslatorInterface $translator,
+        private readonly AttributeMetadataProvider $attributeMetadataProvider,
+        private readonly ProductSystemFieldRegistry $systemFieldRegistry,
+        private readonly TranslatorInterface $translator,
     ) {
     }
 

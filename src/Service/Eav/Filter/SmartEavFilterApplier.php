@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service\Eav\Filter;
 
+use App\Exception\Api\InvalidFilterException;
 use App\Service\Eav\AttributeMetadataProvider;
 use App\Service\Eav\AttributeTypeRegistry;
 use App\Service\Eav\Dto\AttributeMetadata;
@@ -17,7 +18,6 @@ use Doctrine\ORM\QueryBuilder;
 use Symfony\Component\DependencyInjection\Attribute\AsTaggedItem;
 use Symfony\Component\DependencyInjection\Attribute\AutoconfigureTag;
 use Symfony\Contracts\Translation\TranslatorInterface;
-use App\Exception\Api\InvalidFilterException;
 
 #[AutoconfigureTag('app.product.collection_applier')]
 #[AsTaggedItem(priority: 100)]
@@ -36,11 +36,12 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
     ];
 
     public function __construct(
+        private readonly Tokenizer $tokenizer,
         private readonly Parser $parser,
         private readonly FieldCollector $fieldCollector,
         private readonly AttributeMetadataProvider $metadataProvider,
         private readonly AttributeTypeRegistry $typeRegistry,
-        private readonly TranslatorInterface $translator
+        private readonly TranslatorInterface $translator,
     ) {
     }
 
@@ -60,13 +61,17 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
             return;
         }
 
-        $ast = $this->parser->parse($filter);
+        $tokens = $this->tokenizer->tokenize($filter);
+        $ast = $this->parser->parse($tokens);
+
         $codes = $this->fieldCollector->collect($ast);
         $metadataMap = $this->metadataProvider->getByCodes($codes);
 
         foreach ($codes as $code) {
             if (!isset($metadataMap[$code]) && !isset(self::BASE_FIELDS[$code])) {
-                throw new InvalidFilterException($this->translator->trans('eav.filter.unknown_field', ['%field%' => $code]));
+                throw new InvalidFilterException(
+                    $this->translator->trans('eav.filter.unknown_field', ['%field%' => $code])
+                );
             }
         }
 
@@ -84,9 +89,16 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
         $this->aliases = [];
     }
 
-    /** @param array<string, AttributeMetadata> $metadataMap */
-    private function buildNodeExpression(QueryBuilder $qb, Node $node, array $metadataMap, string $rootAlias, bool $insideOr): string|Andx|Orx|null
-    {
+    /**
+     * @param array<string, AttributeMetadata> $metadataMap
+     */
+    private function buildNodeExpression(
+        QueryBuilder $qb,
+        Node $node,
+        array $metadataMap,
+        string $rootAlias,
+        bool $insideOr
+    ): string|Andx|Orx|null {
         if ($node instanceof ConditionNode) {
             if (isset(self::BASE_FIELDS[$node->field])) {
                 return $this->buildBaseFieldCondition($qb, $node, $rootAlias, self::BASE_FIELDS[$node->field]);
@@ -108,6 +120,7 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
 
         foreach ($node->children as $child) {
             $expr = $this->buildNodeExpression($qb, $child, $metadataMap, $rootAlias, $childInsideOr);
+
             if ($expr !== null) {
                 $parts[] = $expr;
             }
@@ -117,15 +130,28 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
             return null;
         }
 
-        return $node->type === 'OR' ? new Orx($parts) : new Andx($parts);
+        return $node->type === 'OR'
+            ? new Orx($parts)
+            : new Andx($parts);
     }
 
-    private function buildBaseFieldCondition(QueryBuilder $qb, ConditionNode $condition, string $rootAlias, string $type): string
-    {
+    private function buildBaseFieldCondition(
+        QueryBuilder $qb,
+        ConditionNode $condition,
+        string $rootAlias,
+        string $type
+    ): string {
         $fieldPath = $rootAlias . '.' . $condition->field;
-        $paramName = 'base_' . $this->paramIndex++;
         $preparedValue = $this->prepareBaseFieldValue($condition, $type);
 
+        if ($condition->operator === 'IN') {
+            $paramName = 'base_in_' . $this->paramIndex++;
+            $qb->setParameter($paramName, $preparedValue);
+
+            return $this->buildComparisonExpressionRaw($condition->operator, $fieldPath, ':' . $paramName);
+        }
+
+        $paramName = 'base_' . $this->paramIndex++;
         $qb->setParameter($paramName, $preparedValue);
 
         return $this->buildComparisonExpressionRaw($condition->operator, $fieldPath, ':' . $paramName);
@@ -135,9 +161,13 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
     {
         if ($condition->operator === 'IN') {
             $values = $this->parseInValues($condition->value, $type);
+
             if ($values === []) {
-                throw new InvalidFilterException($this->translator->trans('eav.filter.empty_in_values', ['%field%' => $condition->field]));
+                throw new InvalidFilterException(
+                    $this->translator->trans('eav.filter.empty_in_values', ['%field%' => $condition->field])
+                );
             }
+
             return $values;
         }
 
@@ -154,33 +184,72 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
         return $value;
     }
 
-    private function buildJoinCondition(QueryBuilder $qb, ConditionNode $condition, AttributeMetadata $metadata, string $rootAlias): string
-    {
+    private function buildJoinCondition(
+        QueryBuilder $qb,
+        ConditionNode $condition,
+        AttributeMetadata $metadata,
+        string $rootAlias
+    ): string {
         $alias = $this->ensureJoin($qb, $metadata, $rootAlias);
+
         return $this->buildComparisonExpression($qb, $alias . '.value', $condition, $metadata);
     }
 
-    private function buildExistsCondition(QueryBuilder $qb, ConditionNode $condition, AttributeMetadata $metadata, string $rootAlias): string
-    {
+    private function buildExistsCondition(
+        QueryBuilder $qb,
+        ConditionNode $condition,
+        AttributeMetadata $metadata,
+        string $rootAlias
+    ): string {
         $subAlias = 'sx' . $this->joinIndex++;
         $entityClass = $this->typeRegistry->getValueEntityClass($metadata->type);
         $attributeParam = 'exists_attr_' . $this->paramIndex++;
-        $valueParam = 'exists_val_' . $this->paramIndex++;
         $preparedValue = $this->prepareValue($condition, $metadata);
 
         $qb->setParameter($attributeParam, $metadata->id);
-        $qb->setParameter($valueParam, $preparedValue);
 
-        $comparison = $this->buildComparisonExpressionRaw($condition->operator, $subAlias . '.value', ':' . $valueParam);
+        if ($condition->operator === 'IN') {
+            $valueParam = 'exists_vals_' . $this->paramIndex++;
+            $qb->setParameter($valueParam, $preparedValue);
+        } else {
+            $valueParam = 'exists_val_' . $this->paramIndex++;
+            $qb->setParameter($valueParam, $preparedValue);
+        }
 
-        return sprintf('EXISTS (SELECT 1 FROM %s %s WHERE %s.product = %s AND %s.attribute = :%s AND %s)', $entityClass, $subAlias, $subAlias, $rootAlias, $subAlias, $attributeParam, $comparison);
+        $comparison = $this->buildComparisonExpressionRaw(
+            $condition->operator,
+            $subAlias . '.value',
+            ':' . $valueParam
+        );
+
+        return sprintf(
+            'EXISTS (SELECT 1 FROM %s %s WHERE %s.product = %s AND %s.attribute = :%s AND %s)',
+            $entityClass,
+            $subAlias,
+            $subAlias,
+            $rootAlias,
+            $subAlias,
+            $attributeParam,
+            $comparison
+        );
     }
 
-    private function buildComparisonExpression(QueryBuilder $qb, string $fieldPath, ConditionNode $condition, AttributeMetadata $metadata): string
-    {
-        $paramName = 'filter_' . $this->paramIndex++;
+    private function buildComparisonExpression(
+        QueryBuilder $qb,
+        string $fieldPath,
+        ConditionNode $condition,
+        AttributeMetadata $metadata
+    ): string {
         $preparedValue = $this->prepareValue($condition, $metadata);
-        $qb->setParameter($paramName, $preparedValue);
+
+        if ($condition->operator === 'IN') {
+            $paramName = 'filter_in_' . $this->paramIndex++;
+            $qb->setParameter($paramName, $preparedValue);
+        } else {
+            $paramName = 'filter_' . $this->paramIndex++;
+            $qb->setParameter($paramName, $preparedValue);
+        }
+
         return $this->buildComparisonExpressionRaw($condition->operator, $fieldPath, ':' . $paramName);
     }
 
@@ -195,7 +264,9 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
             'LE' => sprintf('%s <= %s', $fieldPath, $parameterName),
             'BEGINS' => sprintf('%s LIKE %s', $fieldPath, $parameterName),
             'IN' => sprintf('%s IN (%s)', $fieldPath, $parameterName),
-            default => throw new InvalidFilterException($this->translator->trans('eav.filter.unsupported_operator', ['%operator%' => $operator])),
+            default => throw new InvalidFilterException(
+                $this->translator->trans('eav.filter.unsupported_operator', ['%operator%' => $operator])
+            ),
         };
     }
 
@@ -209,7 +280,13 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
         $attributeParam = 'join_attr_' . $this->paramIndex++;
         $entityClass = $this->typeRegistry->getValueEntityClass($metadata->type);
 
-        $qb->innerJoin($entityClass, $alias, 'WITH', sprintf('%s.product = %s AND %s.attribute = :%s', $alias, $rootAlias, $alias, $attributeParam));
+        $qb->innerJoin(
+            $entityClass,
+            $alias,
+            'WITH',
+            sprintf('%s.product = %s AND %s.attribute = :%s', $alias, $rootAlias, $alias, $attributeParam)
+        );
+
         $qb->setParameter($attributeParam, $metadata->id);
         $this->aliases[$metadata->code] = $alias;
 
@@ -220,48 +297,67 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
     {
         if ($condition->operator === 'IN') {
             $values = $this->parseInValues($condition->value, $metadata->type);
+
             if ($values === []) {
-                throw new InvalidFilterException($this->translator->trans('eav.filter.empty_in_values', ['%field%' => $condition->field]));
+                throw new InvalidFilterException(
+                    $this->translator->trans('eav.filter.empty_in_values', ['%field%' => $condition->field])
+                );
             }
+
             return $values;
         }
 
         $value = $this->normalizeScalarValue($condition->value, $metadata->type);
+
         if (in_array($condition->operator, ['GT', 'GE', 'LT', 'LE'], true)) {
             $this->assertComparableType($condition, $metadata);
         }
+
         if ($condition->operator === 'BEGINS') {
             return $this->escapeLike((string) $value) . '%';
         }
+
         return $value;
     }
 
-    /** @return list<int|float|string> */
+    /**
+     * @return list<int|float|string>
+     */
     private function parseInValues(string $value, string $type): array
     {
         $value = trim($value);
+
         if (!str_starts_with($value, '(') || !str_ends_with($value, ')')) {
-            throw new InvalidFilterException($this->translator->trans('eav.filter.invalid_in_value', ['%value%' => $value]));
+            throw new InvalidFilterException(
+                $this->translator->trans('eav.filter.invalid_in_value', ['%value%' => $value])
+            );
         }
 
         $inner = trim(substr($value, 1, -1));
+
         if ($inner === '') {
             return [];
         }
 
         $items = $this->splitInValues($inner);
         $result = [];
+
         foreach ($items as $item) {
             $item = trim($item);
+
             if ($item === '') {
                 continue;
             }
+
             $result[] = $this->normalizeScalarValue($this->trimWrappingQuotes($item), $type);
         }
+
         return array_values($result);
     }
 
-    /** @return list<string> */
+    /**
+     * @return list<string>
+     */
     private function splitInValues(string $input): array
     {
         $items = [];
@@ -272,41 +368,50 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
 
         for ($i = 0; $i < $length; $i++) {
             $char = $input[$i];
+
             if ($inQuote) {
                 if ($char === '\\' && isset($input[$i + 1])) {
                     $buffer .= $input[$i + 1];
                     $i++;
                     continue;
                 }
+
                 if ($char === $quoteChar) {
                     $inQuote = false;
                     $quoteChar = null;
                 }
+
                 $buffer .= $char;
                 continue;
             }
-            if ($char === "'" || $char === '"') {
+
+            if ($char === '\'' || $char === '"') {
                 $inQuote = true;
                 $quoteChar = $char;
                 $buffer .= $char;
                 continue;
             }
-            if ($char === ';') {
+
+            if ($char === ',') {
                 $items[] = $buffer;
                 $buffer = '';
                 continue;
             }
+
             $buffer .= $char;
         }
+
         if ($buffer !== '') {
             $items[] = $buffer;
         }
+
         return array_values($items);
     }
 
     private function normalizeScalarValue(string $value, string $type): int|float|string
     {
         $value = trim($value);
+
         return match ($type) {
             'int', 'boolean' => (int) $value,
             'decimal', 'float' => (float) $value,
@@ -322,7 +427,13 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
     private function assertComparableScalarType(string $field, string $operator, string $type): void
     {
         if (!in_array($type, ['int', 'decimal', 'float', 'boolean'], true)) {
-            throw new InvalidFilterException($this->translator->trans('eav.filter.non_numeric_operator', ['%operator%' => $operator, '%field%' => $field, '%type%' => $type]));
+            throw new InvalidFilterException(
+                $this->translator->trans('eav.filter.non_numeric_operator', [
+                    '%operator%' => $operator,
+                    '%field%' => $field,
+                    '%type%' => $type,
+                ])
+            );
         }
     }
 
@@ -330,13 +441,16 @@ final class SmartEavFilterApplier implements CollectionApplierInterface
     {
         $value = trim($value);
         $length = strlen($value);
+
         if ($length >= 2) {
             $first = $value[0];
             $last = $value[$length - 1];
-            if (($first === "'" && $last === "'") || ($first === '"' && $last === '"')) {
+
+            if (($first === '\'' && $last === '\'') || ($first === '"' && $last === '"')) {
                 $value = substr($value, 1, -1);
             }
         }
+
         return stripcslashes($value);
     }
 
