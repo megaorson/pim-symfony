@@ -20,21 +20,30 @@ class ProductAttribute implements TimestampableInterface
     #[ORM\Column]
     private ?int $id = null;
 
-    #[ORM\Column(length: 100)]
-    private ?string $code = null;
+    #[ORM\Column(length: 100, unique: true)]
+    private string $code;
 
     #[ORM\Column(length: 50)]
-    private ?string $type = null;
+    private string $type;
 
     #[ORM\Column(length: 255)]
-    private ?string $name = null;
+    private string $name;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isRequired = false;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isFilterable = false;
+
+    #[ORM\Column(type: 'boolean', options: ['default' => false])]
+    private bool $isSortable = false;
 
     public function getId(): ?int
     {
         return $this->id;
     }
 
-    public function getCode(): ?string
+    public function getCode(): string
     {
         return $this->code;
     }
@@ -46,7 +55,7 @@ class ProductAttribute implements TimestampableInterface
         return $this;
     }
 
-    public function getType(): ?string
+    public function getType(): string
     {
         return $this->type;
     }
@@ -58,7 +67,7 @@ class ProductAttribute implements TimestampableInterface
         return $this;
     }
 
-    public function getName(): ?string
+    public function getName(): string
     {
         return $this->name;
     }
@@ -66,6 +75,42 @@ class ProductAttribute implements TimestampableInterface
     public function setName(string $name): static
     {
         $this->name = $name;
+
+        return $this;
+    }
+
+    public function isRequired(): bool
+    {
+        return $this->isRequired;
+    }
+
+    public function setIsRequired(bool $isRequired): static
+    {
+        $this->isRequired = $isRequired;
+
+        return $this;
+    }
+
+    public function isFilterable(): bool
+    {
+        return $this->isFilterable;
+    }
+
+    public function setIsFilterable(bool $isFilterable): static
+    {
+        $this->isFilterable = $isFilterable;
+
+        return $this;
+    }
+
+    public function isSortable(): bool
+    {
+        return $this->isSortable;
+    }
+
+    public function setIsSortable(bool $isSortable): static
+    {
+        $this->isSortable = $isSortable;
 
         return $this;
     }

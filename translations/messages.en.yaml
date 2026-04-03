@@ -18,6 +18,9 @@ admin:
             code: 'Code'
             name: 'Name'
             type: 'Type'
+            isRequired: 'Is required'
+            isFilterable: 'Is filterable'
+            isSortable: 'Is sortable'
 
 console:
     create_admin:
@@ -49,6 +52,15 @@ product:
         expected_int: 'Attribute "%code%" must be an integer.'
         expected_decimal: 'Attribute "%code%" must be a decimal number.'
         unsupported_type: 'Unsupported attribute type "%type%" for attribute "%code%".'
+
+product_attribute:
+    not_found: 'Product attribute with id "%id%" was not found.'
+    output:
+        id_is_null: 'Product attribute "%code%" has no ID.'
+    code_already_exists: 'Product attribute with code "%code%" already exists.'
+    invalid_type: 'Product attribute type "%type%" is invalid. Allowed types: %types%.'
+    empty_code: 'Product attribute code cannot be empty.'
+    empty_name: 'Product attribute name cannot be empty.'
 
 api_error:
     title: 'Bad request'

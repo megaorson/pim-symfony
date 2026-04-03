@@ -18,7 +18,7 @@ use App\ApiResource\Dto\ProductPatchInput;
 use App\State\ProductCollectionProvider;
 use App\State\ProductCreateProcessor;
 use App\State\ProductDeleteProcessor;
-use App\State\ProductProvider;
+use App\State\ProductItemProvider;
 use App\State\ProductUpdateProcessor;
 
 #[ApiResource(
@@ -45,7 +45,7 @@ use App\State\ProductUpdateProcessor;
         ),
         new Get(
             uriTemplate: '/products/{id}',
-            provider: ProductProvider::class,
+            provider: ProductItemProvider::class,
             output: ProductOutput::class
         ),
         new Post(
@@ -68,6 +68,6 @@ use App\State\ProductUpdateProcessor;
         ),
     ]
 )]
-class ProductApiResource
+final class ProductApiResource
 {
 }
