@@ -25,25 +25,48 @@ class Product implements TimestampableInterface
     #[ORM\Column(length: 100)]
     private ?string $sku = null;
 
-    #[ORM\OneToMany(mappedBy: 'product', targetEntity: ProductAttributeValueDecimal::class, cascade: ['persist'], orphanRemoval: true)]
+    /**
+     * @var Collection<int, ProductAttributeValueDecimal>
+     */
+    #[ORM\OneToMany(
+        mappedBy: 'product',
+        targetEntity: ProductAttributeValueDecimal::class,
+        cascade: ['persist'],
+        orphanRemoval: true
+    )]
     private Collection $decimalValues;
 
     /**
      * @var Collection<int, ProductAttributeValueText>
      */
-    #[ORM\OneToMany(targetEntity: ProductAttributeValueText::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(
+        targetEntity: ProductAttributeValueText::class,
+        mappedBy: 'product',
+        cascade: ['persist'],
+        orphanRemoval: true
+    )]
     private Collection $textValues;
 
     /**
      * @var Collection<int, ProductAttributeValueInt>
      */
-    #[ORM\OneToMany(targetEntity: ProductAttributeValueInt::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(
+        targetEntity: ProductAttributeValueInt::class,
+        mappedBy: 'product',
+        cascade: ['persist'],
+        orphanRemoval: true
+    )]
     private Collection $intValues;
 
     /**
      * @var Collection<int, ProductAttributeValueImage>
      */
-    #[ORM\OneToMany(targetEntity: ProductAttributeValueImage::class, mappedBy: 'product', cascade: ['persist'], orphanRemoval: true)]
+    #[ORM\OneToMany(
+        targetEntity: ProductAttributeValueImage::class,
+        mappedBy: 'product',
+        cascade: ['persist'],
+        orphanRemoval: true
+    )]
     private Collection $imageValues;
 
     public function __construct()
@@ -54,30 +77,138 @@ class Product implements TimestampableInterface
         $this->imageValues = new ArrayCollection();
     }
 
+    /**
+     * @return list<ProductAttributeTypeInterface>
+     */
     public function getAttributes(): array
     {
-        return [];
+        return $this->getAllAttributeValues();
     }
 
-    public function getAttributeValue(string $code)
+    public function getAttributeValue(string $code): mixed
     {
-        return '';
+        return $this->getAttributeValueObject($code)?->getValue();
     }
 
-    public function getAllAttributeValues(): array
+    public function hasAttributeValue(string $code): bool
     {
-        return array_merge(
-            $this->textValues?->toArray() ?? [],
-            $this->intValues?->toArray() ?? [],
-            $this->decimalValues?->toArray() ?? [],
-            $this->imageValues?->toArray() ?? []
-        );
+        return $this->getAttributeValueObject($code) !== null;
+    }
+
+    public function getAttributeValueObject(string $code): ?ProductAttributeTypeInterface
+    {
+        $code = trim($code);
+
+        if ($code === '') {
+            return null;
+        }
+
+        foreach ($this->getAllAttributeValues() as $attributeValue) {
+            $attribute = $attributeValue->getAttribute();
+
+            if ($attribute === null) {
+                continue;
+            }
+
+            if ($attribute->getCode() !== $code) {
+                continue;
+            }
+
+            return $attributeValue;
+        }
+
+        return null;
+    }
+
+    public function removeAttributeValueObject(ProductAttributeTypeInterface $attributeValue): void
+    {
+        $method = $this->resolveRemoveMethodName($attributeValue);
+
+        if (!method_exists($this, $method)) {
+            throw new \LogicException(sprintf(
+                'Remove method "%s" does not exist for attribute value class "%s".',
+                $method,
+                $attributeValue::class
+            ));
+        }
+
+        $this->$method($attributeValue);
+    }
+
+    public function addAttributeValueObject(ProductAttributeTypeInterface $attributeValue): void
+    {
+        $method = $this->resolveAddMethodName($attributeValue);
+
+        if (!method_exists($this, $method)) {
+            throw new \LogicException(sprintf(
+                'Add method "%s" does not exist for attribute value class "%s".',
+                $method,
+                $attributeValue::class
+            ));
+        }
+
+        $this->$method($attributeValue);
+    }
+
+    private function resolveAddMethodName(ProductAttributeTypeInterface $attributeValue): string
+    {
+        $shortName = (new \ReflectionClass($attributeValue))->getShortName();
+
+        if (!str_starts_with($shortName, 'ProductAttributeValue')) {
+            throw new \LogicException(sprintf(
+                'Unsupported attribute value class "%s".',
+                $attributeValue::class
+            ));
+        }
+
+        $suffix = substr($shortName, strlen('ProductAttributeValue'));
+
+        if ($suffix === '' || $suffix === false) {
+            throw new \LogicException(sprintf(
+                'Cannot resolve add method for attribute value class "%s".',
+                $attributeValue::class
+            ));
+        }
+
+        return sprintf('add%sValue', $suffix);
+    }
+
+    private function resolveRemoveMethodName(ProductAttributeTypeInterface $attributeValue): string
+    {
+        $shortName = (new \ReflectionClass($attributeValue))->getShortName();
+
+        if (!str_starts_with($shortName, 'ProductAttributeValue')) {
+            throw new \LogicException(sprintf(
+                'Unsupported attribute value class "%s".',
+                $attributeValue::class
+            ));
+        }
+
+        $suffix = substr($shortName, strlen('ProductAttributeValue'));
+
+        if ($suffix === '' || $suffix === false) {
+            throw new \LogicException(sprintf(
+                'Cannot resolve remove method for attribute value class "%s".',
+                $attributeValue::class
+            ));
+        }
+
+        return sprintf('remove%sValue', $suffix);
     }
 
     /**
-     * Retrieves the ID.
-     * @return int|null The ID value or null if not set.
+     * @return list<ProductAttributeTypeInterface>
      */
+    public function getAllAttributeValues(): array
+    {
+        return array_merge(
+            $this->textValues->toArray(),
+            $this->intValues->toArray(),
+            $this->decimalValues->toArray(),
+            $this->imageValues->toArray()
+        );
+    }
+
     public function getId(): ?int
     {
         return $this->id;
@@ -88,7 +219,8 @@ class Product implements TimestampableInterface
         return $this->sku;
     }
 
-    public function setSku(string $sku): static {
+    public function setSku(string $sku): static
+    {
         $this->sku = $sku;
 
         return $this;
@@ -115,7 +247,6 @@ class Product implements TimestampableInterface
     public function removeDecimalValue(ProductAttributeValueDecimal $productAttributeValueDecimal): static
     {
         if ($this->decimalValues->removeElement($productAttributeValueDecimal)) {
-            // set the owning side to null (unless already changed)
             if ($productAttributeValueDecimal->getProduct() === $this) {
                 $productAttributeValueDecimal->setProduct(null);
             }
@@ -145,7 +276,6 @@ class Product implements TimestampableInterface
     public function removeTextValue(ProductAttributeValueText $textValue): static
     {
         if ($this->textValues->removeElement($textValue)) {
-            // set the owning side to null (unless already changed)
             if ($textValue->getProduct() === $this) {
                 $textValue->setProduct(null);
             }
@@ -175,7 +305,6 @@ class Product implements TimestampableInterface
     public function removeIntValue(ProductAttributeValueInt $intValue): static
     {
         if ($this->intValues->removeElement($intValue)) {
-            // set the owning side to null (unless already changed)
             if ($intValue->getProduct() === $this) {
                 $intValue->setProduct(null);
             }
@@ -205,7 +334,6 @@ class Product implements TimestampableInterface
     public function removeImageValue(ProductAttributeValueImage $imageValue): static
     {
         if ($this->imageValues->removeElement($imageValue)) {
-            // set the owning side to null (unless already changed)
             if ($imageValue->getProduct() === $this) {
                 $imageValue->setProduct(null);
             }

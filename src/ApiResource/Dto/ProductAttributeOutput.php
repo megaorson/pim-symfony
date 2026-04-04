@@ -12,6 +12,7 @@ final class ProductAttributeOutput
     public bool $isRequired;
     public bool $isFilterable;
     public bool $isSortable;
+    public bool $isSelectable;
     public \DateTimeImmutable $createdAt;
     public \DateTimeImmutable $updatedAt;
 }

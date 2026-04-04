@@ -13,6 +13,7 @@ use App\Repository\ProductRepository;
 use App\Service\Eav\AttributeValueUpdater;
 use App\Service\Product\Factory\ProductOutputContextFactory;
 use App\Service\Product\Factory\ProductOutputFactory;
+use App\Service\Product\Validation\ProductRequiredAttributesValidator;
 use App\Service\ProductAttributeLocator;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -27,12 +28,14 @@ final class ProductUpdateProcessor implements ProcessorInterface
         private readonly ProductOutputFactory $productOutputFactory,
         private readonly ProductOutputContextFactory $productOutputContextFactory,
         private readonly TranslatorInterface $translator,
+        private readonly ProductRequiredAttributesValidator $productRequiredAttributesValidator,
     ) {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ProductOutput
     {
-        /** @var ProductPatchInput $data */
+        \assert($data instanceof ProductPatchInput);
+
         $product = $this->productRepository->find($uriVariables['id'] ?? null);
 
         if (!$product instanceof Product) {
@@ -53,6 +56,8 @@ final class ProductUpdateProcessor implements ProcessorInterface
             $attribute = $this->productAttributeLocator->getByCode((string) $code);
             $this->attributeValueUpdater->upsert($product, $attribute, $value);
         }
+
+        $this->productRequiredAttributesValidator->validate($product);
 
         $this->em->flush();
 

@@ -38,6 +38,9 @@ class ProductAttribute implements TimestampableInterface
     #[ORM\Column(type: 'boolean', options: ['default' => false])]
     private bool $isSortable = false;
 
+    #[ORM\Column(type: 'boolean', options: ['default' => true])]
+    private bool $isSelectable = true;
+
     public function getId(): ?int
     {
         return $this->id;
@@ -111,6 +114,18 @@ class ProductAttribute implements TimestampableInterface
     public function setIsSortable(bool $isSortable): static
     {
         $this->isSortable = $isSortable;
+
+        return $this;
+    }
+
+    public function isSelectable(): bool
+    {
+        return $this->isSelectable;
+    }
+
+    public function setIsSelectable(bool $isSelectable): static
+    {
+        $this->isSelectable = $isSelectable;
 
         return $this;
     }

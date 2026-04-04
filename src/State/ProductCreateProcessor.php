@@ -11,6 +11,7 @@ use App\Entity\Product;
 use App\Service\Eav\AttributeValueWriter;
 use App\Service\Product\Factory\ProductOutputContextFactory;
 use App\Service\Product\Factory\ProductOutputFactory;
+use App\Service\Product\Validation\ProductRequiredAttributesValidator;
 use App\Service\ProductAttributeLocator;
 use Doctrine\ORM\EntityManagerInterface;
 
@@ -22,12 +23,14 @@ final class ProductCreateProcessor implements ProcessorInterface
         private readonly AttributeValueWriter $attributeValueWriter,
         private readonly ProductOutputFactory $productOutputFactory,
         private readonly ProductOutputContextFactory $productOutputContextFactory,
+        private readonly ProductRequiredAttributesValidator $productRequiredAttributesValidator,
     ) {
     }
 
     public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): ProductOutput
     {
-        /** @var ProductInput $data */
+        \assert($data instanceof ProductInput);
+
         $product = new Product();
         $product->setSku(trim($data->sku));
 
@@ -37,6 +40,8 @@ final class ProductCreateProcessor implements ProcessorInterface
             $attribute = $this->productAttributeLocator->getByCode((string) $code);
             $this->attributeValueWriter->write($product, $attribute, $value);
         }
+
+        $this->productRequiredAttributesValidator->validate($product);
 
         $this->em->flush();
 

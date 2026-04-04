@@ -11,4 +11,5 @@ final class ProductAttributeInput
     public bool $isRequired = false;
     public bool $isFilterable = false;
     public bool $isSortable = false;
+    public bool $isSelectable = true;
 }

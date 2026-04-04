@@ -56,6 +56,10 @@ final class ProductAttributeUpdateProcessor implements ProcessorInterface
             $attribute->setIsRequired($data->isRequired);
         }
 
+        if ($data->isSelectable !== null) {
+            $attribute->setIsSelectable($data->isSelectable);
+        }
+
         if ($data->isFilterable !== null) {
             $attribute->setIsFilterable($data->isFilterable);
         }

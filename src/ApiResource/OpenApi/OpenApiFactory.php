@@ -8,14 +8,16 @@ use ApiPlatform\OpenApi\Model\Operation;
 use ApiPlatform\OpenApi\Model\Parameter;
 use ApiPlatform\OpenApi\OpenApi;
 use App\Service\Eav\FilterDocumentationBuilder;
+use App\Service\Eav\SelectDocumentationBuilder;
 use App\Service\Eav\SortDocumentationBuilder;
 
 final class OpenApiFactory implements OpenApiFactoryInterface
 {
     public function __construct(
         private readonly OpenApiFactoryInterface $decorated,
-        private readonly FilterDocumentationBuilder $documentationBuilder,
+        private readonly FilterDocumentationBuilder $filterDocumentationBuilder,
         private readonly SortDocumentationBuilder $sortDocumentationBuilder,
+        private readonly SelectDocumentationBuilder $selectDocumentationBuilder,
     ) {
     }
 
@@ -37,28 +39,37 @@ final class OpenApiFactory implements OpenApiFactoryInterface
 
             $parameters = $get->getParameters() ?? [];
 
-            $parameters[] = new Parameter(
-                name: 'filter',
-                in: 'query',
-                description: $this->documentationBuilder->buildFilterDescription(),
-                schema: ['type' => 'string'],
-                example: $this->documentationBuilder->buildFilterExample(),
+            $parameters = $this->upsertParameter(
+                $parameters,
+                new Parameter(
+                    name: 'filter',
+                    in: 'query',
+                    description: $this->filterDocumentationBuilder->buildFilterDescription(),
+                    schema: ['type' => 'string'],
+                    example: $this->filterDocumentationBuilder->buildFilterExample(),
+                )
             );
 
-            $parameters[] = new Parameter(
-                name: 'select',
-                in: 'query',
-                description: $this->documentationBuilder->buildSelectDescription(),
-                schema: ['type' => 'string'],
-                example: $this->documentationBuilder->buildSelectExample(),
+            $parameters = $this->upsertParameter(
+                $parameters,
+                new Parameter(
+                    name: 'select',
+                    in: 'query',
+                    description: $this->selectDocumentationBuilder->buildSelectDescription(),
+                    schema: ['type' => 'string'],
+                    example: $this->selectDocumentationBuilder->buildSelectExample(),
+                )
             );
 
-            $parameters[] = new Parameter(
-                name: 'sort',
-                in: 'query',
-                description: $this->sortDocumentationBuilder->buildSortDescription(),
-                schema: ['type' => 'string'],
-                example: $this->sortDocumentationBuilder->buildSortExample(),
+            $parameters = $this->upsertParameter(
+                $parameters,
+                new Parameter(
+                    name: 'sort',
+                    in: 'query',
+                    description: $this->sortDocumentationBuilder->buildSortDescription(),
+                    schema: ['type' => 'string'],
+                    example: $this->sortDocumentationBuilder->buildSortExample(),
+                )
             );
 
             $updatedGet = $get->withParameters($parameters);
@@ -67,5 +78,29 @@ final class OpenApiFactory implements OpenApiFactoryInterface
         }
 
         return $openApi;
+    }
+
+    /**
+     * @param array<int, Parameter> $parameters
+     * @return array<int, Parameter>
+     */
+    private function upsertParameter(array $parameters, Parameter $parameter): array
+    {
+        $result = [];
+
+        foreach ($parameters as $existingParameter) {
+            if (
+                $existingParameter->getName() === $parameter->getName()
+                && $existingParameter->getIn() === $parameter->getIn()
+            ) {
+                continue;
+            }
+
+            $result[] = $existingParameter;
+        }
+
+        $result[] = $parameter;
+
+        return $result;
     }
 }

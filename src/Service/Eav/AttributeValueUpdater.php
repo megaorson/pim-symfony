@@ -5,55 +5,34 @@ namespace App\Service\Eav;
 
 use App\Entity\Product;
 use App\Entity\ProductAttribute;
-use App\Entity\ProductAttributeTypeInterface;
-use Doctrine\ORM\EntityManagerInterface;
 
-final class AttributeValueUpdater
+final readonly class AttributeValueUpdater
 {
     public function __construct(
-        private readonly AttributeValueHandlerRegistry $attributeValueHandlerRegistry,
-        private readonly AttributeValueWriter $attributeValueWriter,
-        private readonly EntityManagerInterface $em,
+        private AttributeValueWriter $attributeValueWriter,
     ) {
     }
 
-    public function upsert(Product $product, ProductAttribute $attribute, mixed $rawValue): void
+    public function upsert(Product $product, ProductAttribute $attribute, mixed $value): void
     {
-        $existingValues = $this->findExistingValues($product, $attribute);
+        $existingValue = $product->getAttributeValueObject($attribute->getCode());
 
-        if ($existingValues === []) {
-            $this->attributeValueWriter->write($product, $attribute, $rawValue);
+        if ($existingValue === null) {
+            if ($value === null) {
+                return;
+            }
+
+            $this->attributeValueWriter->write($product, $attribute, $value);
+
             return;
         }
 
-        $handler = $this->attributeValueHandlerRegistry->get(
-            $attribute->getType(),
-            $attribute->getCode()
-        );
+        if ($value === null) {
+            $product->removeAttributeValueObject($existingValue);
 
-        $primaryValue = array_shift($existingValues);
-        $handler->update($primaryValue, $attribute, $rawValue);
-
-        foreach ($existingValues as $duplicateValue) {
-            $this->em->remove($duplicateValue);
-        }
-    }
-
-    /**
-     * @return list<ProductAttributeTypeInterface>
-     */
-    private function findExistingValues(Product $product, ProductAttribute $attribute): array
-    {
-        $result = [];
-
-        foreach ($product->getAllAttributeValues() as $valueEntity) {
-            $valueAttribute = $valueEntity->getAttribute();
-
-            if ($valueAttribute?->getId() === $attribute->getId()) {
-                $result[] = $valueEntity;
-            }
+            return;
         }
 
-        return $result;
+        $existingValue->setValue($value);
     }
 }

@@ -35,6 +35,7 @@ final class ProductAttributeOutputFactory
         $output->isRequired = $attribute->isRequired();
         $output->isFilterable = $attribute->isFilterable();
         $output->isSortable = $attribute->isSortable();
+        $output->isSelectable = $attribute->isSelectable();
         $output->createdAt = $attribute->getCreatedAt();
         $output->updatedAt = $attribute->getUpdatedAt();
 

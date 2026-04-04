@@ -9,4 +9,5 @@ final class ProductAttributePatchInput
     public ?bool $isRequired = null;
     public ?bool $isFilterable = null;
     public ?bool $isSortable = null;
+    public ?bool $isSelectable = null;
 }

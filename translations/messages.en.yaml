@@ -18,9 +18,10 @@ admin:
             code: 'Code'
             name: 'Name'
             type: 'Type'
-            isRequired: 'Is required'
-            isFilterable: 'Is filterable'
-            isSortable: 'Is sortable'
+            isRequired: 'Required'
+            isSelectable: 'Selectable'
+            isFilterable: 'Filterable'
+            isSortable: 'Sortable'
 
 console:
     create_admin:
@@ -52,6 +53,8 @@ product:
         expected_int: 'Attribute "%code%" must be an integer.'
         expected_decimal: 'Attribute "%code%" must be a decimal number.'
         unsupported_type: 'Unsupported attribute type "%type%" for attribute "%code%".'
+    error:
+        missing_required_attributes: 'Required product attributes are missing or empty.'
 
 product_attribute:
     not_found: 'Product attribute with id "%id%" was not found.'

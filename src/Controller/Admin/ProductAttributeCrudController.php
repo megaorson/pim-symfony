@@ -32,15 +32,19 @@ final class ProductAttributeCrudController extends AbstractCrudController
         if (Crud::PAGE_EDIT === $pageName) {
             yield TextField::new('code', $this->translator->trans('admin.product_attribute.field.code'))
                 ->setDisabled();
+
             yield ChoiceField::new('type', $this->translator->trans('admin.product_attribute.field.type'))
-                ->setChoices($this->getAvailableTypes())->setDisabled();
+                ->setChoices($this->getAvailableTypes())
+                ->setDisabled();
         } else {
             yield TextField::new('code', $this->translator->trans('admin.product_attribute.field.code'));
+
             yield ChoiceField::new('type', $this->translator->trans('admin.product_attribute.field.type'))
                 ->setChoices($this->getAvailableTypes());
         }
 
         yield BooleanField::new('isRequired', $this->translator->trans('admin.product_attribute.field.isRequired'));
+        yield BooleanField::new('isSelectable', $this->translator->trans('admin.product_attribute.field.isSelectable'));
         yield BooleanField::new('isFilterable', $this->translator->trans('admin.product_attribute.field.isFilterable'));
         yield BooleanField::new('isSortable', $this->translator->trans('admin.product_attribute.field.isSortable'));
     }
@@ -48,9 +52,11 @@ final class ProductAttributeCrudController extends AbstractCrudController
     private function getAvailableTypes(): array
     {
         $response = [];
+
         foreach ($this->attributeTypeRegistry->all() as $type => $_) {
             $response[ucfirst($type)] = $type;
         }
+
         return $response;
     }
 }

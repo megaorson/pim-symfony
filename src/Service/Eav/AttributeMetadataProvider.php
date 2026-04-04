@@ -23,7 +23,7 @@ final readonly class AttributeMetadataProvider
 
         $row = $this->attributeRepository
             ->createQueryBuilder('a')
-            ->select('a.id, a.code, a.type')
+            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired')
             ->andWhere('a.code = :code')
             ->setParameter('code', $code)
             ->setMaxResults(1)
@@ -54,7 +54,7 @@ final readonly class AttributeMetadataProvider
 
         $rows = $this->attributeRepository
             ->createQueryBuilder('a')
-            ->select('a.id, a.code, a.type')
+            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired')
             ->andWhere('a.code IN (:codes)')
             ->setParameter('codes', $codes)
             ->getQuery()
@@ -77,7 +77,7 @@ final readonly class AttributeMetadataProvider
     {
         $rows = $this->attributeRepository
             ->createQueryBuilder('a')
-            ->select('a.id, a.code, a.type')
+            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired')
             ->orderBy('a.code', 'ASC')
             ->getQuery()
             ->getArrayResult();
@@ -122,7 +122,35 @@ final readonly class AttributeMetadataProvider
     }
 
     /**
-     * @param array{id: mixed, code: mixed, type: mixed} $row
+     * @return list<AttributeMetadata>
+     */
+    public function getAllRequired(): array
+    {
+        $rows = $this->attributeRepository
+            ->createQueryBuilder('a')
+            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired')
+            ->andWhere('a.isRequired = :required')
+            ->setParameter('required', true)
+            ->orderBy('a.code', 'ASC')
+            ->getQuery()
+            ->getArrayResult();
+
+        return array_map(
+            fn (array $row): AttributeMetadata => $this->mapRowToMetadata($row),
+            $rows
+        );
+    }
+
+    /**
+     * @param array{
+     *     id: mixed,
+     *     code: mixed,
+     *     type: mixed,
+     *     isSelectable: mixed,
+     *     isFilterable: mixed,
+     *     isSortable: mixed,
+     *     isRequired: mixed
+     * } $row
      */
     private function mapRowToMetadata(array $row): AttributeMetadata
     {
@@ -130,9 +158,10 @@ final readonly class AttributeMetadataProvider
             id: (int) $row['id'],
             code: (string) $row['code'],
             type: (string) $row['type'],
-            filterable: true,
-            selectable: true,
-            sortable: true,
+            filterable: (bool) $row['isFilterable'],
+            selectable: (bool) $row['isSelectable'],
+            sortable: (bool) $row['isSortable'],
+            required: (bool) $row['isRequired'],
         );
     }
 }
