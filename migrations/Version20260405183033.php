@@ -10,7 +10,7 @@ use Doctrine\Migrations\AbstractMigration;
 /**
  * Auto-generated Migration: Please modify to your needs!
  */
-final class Version20260324170057 extends AbstractMigration
+final class Version20260405183033 extends AbstractMigration
 {
     public function getDescription(): string
     {
@@ -20,8 +20,9 @@ final class Version20260324170057 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // this up() migration is auto-generated, please modify it to your needs
-        $this->addSql('CREATE TABLE product (id INT AUTO_INCREMENT NOT NULL, sku VARCHAR(100) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8');
-        $this->addSql('CREATE TABLE product_attribute (id INT AUTO_INCREMENT NOT NULL, code VARCHAR(100) NOT NULL, type VARCHAR(50) NOT NULL, name VARCHAR(255) NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8');
+        $this->addSql('CREATE TABLE admin_user (id INT AUTO_INCREMENT NOT NULL, email VARCHAR(180) NOT NULL, roles JSON NOT NULL, password VARCHAR(255) NOT NULL, UNIQUE INDEX UNIQ_IDENTIFIER_EMAIL (email), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8');
+        $this->addSql('CREATE TABLE product (id INT AUTO_INCREMENT NOT NULL, sku VARCHAR(100) NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8');
+        $this->addSql('CREATE TABLE product_attribute (id INT AUTO_INCREMENT NOT NULL, code VARCHAR(100) NOT NULL, type VARCHAR(50) NOT NULL, name VARCHAR(255) NOT NULL, is_required TINYINT DEFAULT 0 NOT NULL, is_filterable TINYINT DEFAULT 0 NOT NULL, is_sortable TINYINT DEFAULT 0 NOT NULL, is_selectable TINYINT DEFAULT 1 NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP NOT NULL, UNIQUE INDEX UNIQ_94DA597677153098 (code), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8');
         $this->addSql('CREATE TABLE product_attribute_value_decimal (id INT AUTO_INCREMENT NOT NULL, value DOUBLE PRECISION NOT NULL, attribute_id INT NOT NULL, product_id INT NOT NULL, INDEX IDX_5DF81CECB6E62EFA (attribute_id), INDEX IDX_5DF81CEC4584665A (product_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8');
         $this->addSql('CREATE TABLE product_attribute_value_image (id INT AUTO_INCREMENT NOT NULL, value VARCHAR(255) NOT NULL, attribute_id INT NOT NULL, product_id INT DEFAULT NULL, INDEX IDX_73E8F88DB6E62EFA (attribute_id), INDEX IDX_73E8F88D4584665A (product_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8');
         $this->addSql('CREATE TABLE product_attribute_value_int (id INT AUTO_INCREMENT NOT NULL, value INT NOT NULL, attribute_id INT NOT NULL, product_id INT NOT NULL, INDEX IDX_A3C4CB49B6E62EFA (attribute_id), INDEX IDX_A3C4CB494584665A (product_id), PRIMARY KEY (id)) DEFAULT CHARACTER SET utf8');
@@ -47,6 +48,7 @@ final class Version20260324170057 extends AbstractMigration
         $this->addSql('ALTER TABLE product_attribute_value_int DROP FOREIGN KEY FK_A3C4CB494584665A');
         $this->addSql('ALTER TABLE product_attribute_value_text DROP FOREIGN KEY FK_885A48F8B6E62EFA');
         $this->addSql('ALTER TABLE product_attribute_value_text DROP FOREIGN KEY FK_885A48F84584665A');
+        $this->addSql('DROP TABLE admin_user');
         $this->addSql('DROP TABLE product');
         $this->addSql('DROP TABLE product_attribute');
         $this->addSql('DROP TABLE product_attribute_value_decimal');

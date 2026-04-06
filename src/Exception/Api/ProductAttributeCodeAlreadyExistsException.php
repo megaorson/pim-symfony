@@ -9,7 +9,7 @@ final class ProductAttributeCodeAlreadyExistsException extends AbstractApiExcept
     {
         parent::__construct(
             message: $message,
-            status: 400,
+            status: 422,
             type: 'product_attribute_code_already_exists',
             context: ['code' => $code],
         );

@@ -81,6 +81,7 @@ final class ProductAttributeCreateProcessor implements ProcessorInterface
         $attribute->setIsRequired($data->isRequired);
         $attribute->setIsFilterable($data->isFilterable);
         $attribute->setIsSortable($data->isSortable);
+        $attribute->setIsSelectable($data->isSelectable);
 
         $this->em->persist($attribute);
         $this->em->flush();

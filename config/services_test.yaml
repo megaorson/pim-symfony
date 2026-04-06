@@ -1,0 +1,5 @@
+services:
+    App\Tests\Functional\Support\DatabaseCleaner:
+        autowire: true
+        autoconfigure: false
+        public: true

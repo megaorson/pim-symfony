@@ -8,3 +8,7 @@ api_platform:
 
     formats:
         json: ['application/json']
+
+    error_formats:
+        jsonproblem: ['application/problem+json']
+        json: ['application/json']
