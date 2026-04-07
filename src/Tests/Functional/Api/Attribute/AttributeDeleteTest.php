@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Api\Attribute;
 
 use App\Entity\ProductAttribute;
-use App\Tests\Functional\Support\ApiTestCase;
+use App\Tests\Functional\Support\AttributeApiTestCase;
 
-final class AttributeDeleteTest extends ApiTestCase
+final class AttributeDeleteTest extends AttributeApiTestCase
 {
     public function testDeleteExistingAttribute(): void
     {

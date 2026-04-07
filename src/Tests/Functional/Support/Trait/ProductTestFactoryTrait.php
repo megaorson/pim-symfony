@@ -3,127 +3,111 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Support\Trait;
 
-use App\Entity\Product;
 use App\Entity\ProductAttribute;
-use App\Entity\ProductAttributeValueDecimal;
-use App\Entity\ProductAttributeValueImage;
-use App\Entity\ProductAttributeValueInt;
-use App\Entity\ProductAttributeValueText;
 
 trait ProductTestFactoryTrait
 {
-    protected function validProductPayload(array $overrides = []): array
+    protected function createDefaultProductAttributes(): void
     {
-        static $counter = 1;
+        $this->createProductAttribute(
+            code: 'name',
+            type: 'text',
+            name: 'Name',
+            isRequired: true,
+            isFilterable: true,
+            isSortable: true,
+        );
 
-        $payload = [
-            'sku' => 'sku-' . $counter,
-            'attributes' => [],
+        $this->createProductAttribute(
+            code: 'price',
+            type: 'decimal',
+            name: 'Price',
+            isRequired: true,
+            isFilterable: true,
+            isSortable: true,
+        );
+
+        $this->createProductAttribute(
+            code: 'qty',
+            type: 'int',
+            name: 'Quantity',
+            isFilterable: true,
+            isSortable: true,
+        );
+    }
+
+    protected function createProductAttribute(
+        string $code,
+        string $type,
+        string $name,
+        bool $isRequired = false,
+        bool $isFilterable = false,
+        bool $isSortable = false,
+        bool $isSelectable = true,
+    ): ProductAttribute {
+        return $this->createAttributeEntity(
+            code: $code,
+            name: $name,
+            type: $type,
+            isRequired: $isRequired,
+            isFilterable: $isFilterable,
+            isSortable: $isSortable,
+            isSelectable: $isSelectable,
+        );
+    }
+
+    protected function makeValidProductPayload(
+        string $sku = 'SKU-001',
+        array $attributes = []
+    ): array {
+        return [
+            'sku' => $sku,
+            'attributes' => array_replace([
+                'name' => 'Test Product',
+                'price' => 1234.56,
+            ], $attributes),
         ];
-
-        $counter++;
-
-        return array_replace_recursive($payload, $overrides);
     }
 
-    protected function createProductEntity(?string $sku = null): Product
+    protected function makeProductPatchPayload(array $attributes): array
     {
-        static $counter = 1;
-
-        $sku ??= 'sku-' . $counter;
-        $counter++;
-
-        $product = new Product();
-        $product->setSku($sku);
-
-        $this->entityManager->persist($product);
-        $this->entityManager->flush();
-
-        return $product;
+        return [
+            'attributes' => $attributes,
+        ];
     }
 
-    protected function attachTextValue(Product $product, ProductAttribute $attribute, string $value): void
-    {
-        $entity = new ProductAttributeValueText();
-        $entity->setProduct($product);
-        $entity->setAttribute($attribute);
-        $entity->setValue($value);
+    protected function createProductThroughApi(
+        string $sku = 'SKU-001',
+        array $attributes = []
+    ): array {
+        $this->jsonPost('/api/products', $this->makeValidProductPayload(
+            sku: $sku,
+            attributes: $attributes,
+        ));
 
-        $this->entityManager->persist($entity);
-        $this->entityManager->flush();
+        self::assertResponseStatusCodeSame(201);
+
+        return $this->responseData();
     }
 
-    protected function attachIntValue(Product $product, ProductAttribute $attribute, int $value): void
-    {
-        $entity = new ProductAttributeValueInt();
-        $entity->setProduct($product);
-        $entity->setAttribute($attribute);
-        $entity->setValue($value);
+    protected function createProductIdThroughApi(
+        string $sku = 'SKU-001',
+        array $attributes = []
+    ): int {
+        $data = $this->createProductThroughApi(
+            sku: $sku,
+            attributes: $attributes,
+        );
 
-        $this->entityManager->persist($entity);
-        $this->entityManager->flush();
+        return (int) $data['id'];
     }
 
-    protected function attachDecimalValue(Product $product, ProductAttribute $attribute, float $value): void
+    protected function getProductThroughApi(int $productId): array
     {
-        $entity = new ProductAttributeValueDecimal();
-        $entity->setProduct($product);
-        $entity->setAttribute($attribute);
-        $entity->setValue($value);
+        $this->jsonGet('/api/products/' . $productId);
 
-        $this->entityManager->persist($entity);
-        $this->entityManager->flush();
-    }
+        self::assertResponseStatusCodeSame(200);
 
-    protected function attachImageValue(Product $product, ProductAttribute $attribute, string $value): void
-    {
-        $entity = new ProductAttributeValueImage();
-        $entity->setProduct($product);
-        $entity->setAttribute($attribute);
-        $entity->setValue($value);
-
-        $this->entityManager->persist($entity);
-        $this->entityManager->flush();
-    }
-
-    /**
-     * Удобный helper для быстрого наполнения продукта атрибутами.
-     *
-     * Ожидает map вида:
-     * [
-     *   'name' => 'Phone',
-     *   'price' => 1999.99,
-     *   'qty' => 10,
-     * ]
-     *
-     * $attributeMap:
-     * [
-     *   'name' => ProductAttribute(type=text),
-     *   'price' => ProductAttribute(type=decimal),
-     *   'qty' => ProductAttribute(type=int),
-     * ]
-     *
-     * @param array<string, mixed> $values
-     * @param array<string, ProductAttribute> $attributeMap
-     */
-    protected function attachAttributeValues(Product $product, array $values, array $attributeMap): void
-    {
-        foreach ($values as $code => $value) {
-            self::assertArrayHasKey($code, $attributeMap, sprintf(
-                'Attribute "%s" is missing in provided attribute map.',
-                $code,
-            ));
-
-            $attribute = $attributeMap[$code];
-            $type = $attribute->getType();
-
-            match ($type) {
-                'text' => $this->attachTextValue($product, $attribute, (string) $value),
-                'int' => $this->attachIntValue($product, $attribute, (int) $value),
-                'decimal' => $this->attachDecimalValue($product, $attribute, (float) $value),
-                'image' => $this->attachImageValue($product, $attribute, (string) $value),
-                default => self::fail(sprintf('Unsupported attribute type "%s" for code "%s".', $type, $code)),
-            };
-        }
+        return $this->responseData();
     }
 }

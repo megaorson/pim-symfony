@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Api\Attribute;
 
-use App\Tests\Functional\Support\ApiTestCase;
+use App\Tests\Functional\Support\AttributeApiTestCase;
 
-final class AttributeGetCollectionTest extends ApiTestCase
+final class AttributeGetCollectionTest extends AttributeApiTestCase
 {
     public function testGetEmptyCollection(): void
     {
@@ -31,7 +31,7 @@ final class AttributeGetCollectionTest extends ApiTestCase
 
     public function testGetCollectionReturnsCreatedAttributes(): void
     {
-        $this->createAttributeEntity(code: 'name', name: 'Name', type: 'text');
+        $this->createAttributeEntity(code: 'name', name: 'Name');
         $this->createAttributeEntity(code: 'price', name: 'Price', type: 'decimal');
 
         $this->jsonGet('/api/attributes');
@@ -55,9 +55,9 @@ final class AttributeGetCollectionTest extends ApiTestCase
 
     public function testGetCollectionSupportsPageAndLimit(): void
     {
-        $this->createAttributeEntity(code: 'attr_1', name: 'Attr 1', type: 'text');
-        $this->createAttributeEntity(code: 'attr_2', name: 'Attr 2', type: 'text');
-        $this->createAttributeEntity(code: 'attr_3', name: 'Attr 3', type: 'text');
+        $this->createAttributeEntity(code: 'attr_1', name: 'Attr 1');
+        $this->createAttributeEntity(code: 'attr_2', name: 'Attr 2');
+        $this->createAttributeEntity(code: 'attr_3', name: 'Attr 3');
 
         $this->jsonGet('/api/attributes?page=2&limit=1');
 
@@ -76,10 +76,10 @@ final class AttributeGetCollectionTest extends ApiTestCase
 
     public function testGetCollectionSupportsSecondPageWithTwoItemsPerPage(): void
     {
-        $this->createAttributeEntity(code: 'attr_1', name: 'Attr 1', type: 'text');
-        $this->createAttributeEntity(code: 'attr_2', name: 'Attr 2', type: 'text');
-        $this->createAttributeEntity(code: 'attr_3', name: 'Attr 3', type: 'text');
-        $this->createAttributeEntity(code: 'attr_4', name: 'Attr 4', type: 'text');
+        $this->createAttributeEntity(code: 'attr_1', name: 'Attr 1');
+        $this->createAttributeEntity(code: 'attr_2', name: 'Attr 2');
+        $this->createAttributeEntity(code: 'attr_3', name: 'Attr 3');
+        $this->createAttributeEntity(code: 'attr_4', name: 'Attr 4');
 
         $this->jsonGet('/api/attributes?page=2&limit=2');
 

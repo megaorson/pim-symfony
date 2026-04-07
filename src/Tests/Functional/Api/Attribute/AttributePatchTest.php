@@ -4,9 +4,9 @@ declare(strict_types=1);
 namespace App\Tests\Functional\Api\Attribute;
 
 use App\Entity\ProductAttribute;
-use App\Tests\Functional\Support\ApiTestCase;
+use App\Tests\Functional\Support\AttributeApiTestCase;
 
-final class AttributePatchTest extends ApiTestCase
+final class AttributePatchTest extends AttributeApiTestCase
 {
     public function testPatchUpdatesNameAndFlags(): void
     {

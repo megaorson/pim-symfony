@@ -3,9 +3,9 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Api\Attribute;
 
-use App\Tests\Functional\Support\ApiTestCase;
+use App\Tests\Functional\Support\AttributeApiTestCase;
 
-final class AttributeGetItemTest extends ApiTestCase
+final class AttributeGetItemTest extends AttributeApiTestCase
 {
     public function testGetExistingAttribute(): void
     {
