@@ -131,15 +131,4 @@ final class ProductGetCollectionTest extends ProductApiTestCase
             'price' => 30.00,
         ]);
     }
-
-    private function findCollectionItemBySku(array $items, string $sku): array
-    {
-        foreach ($items as $item) {
-            if (($item['attributes']['sku'] ?? null) === $sku) {
-                return $item;
-            }
-        }
-
-        self::fail(sprintf('Product with sku "%s" was not found in collection.', $sku));
-    }
 }

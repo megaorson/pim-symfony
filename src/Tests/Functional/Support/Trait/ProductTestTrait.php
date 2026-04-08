@@ -73,4 +73,37 @@ trait ProductTestTrait
         Assert::assertArrayHasKey('attributes', $data);
         Assert::assertArrayNotHasKey($attributeCode, $data['attributes']);
     }
+
+    protected function assertProductPersistedAttributes(Product $product, array $expectedAttributes): void
+    {
+        foreach ($expectedAttributes as $attributeCode => $expectedValue) {
+            $actualValue = $product->getAttributeValue($attributeCode);
+
+            \PHPUnit\Framework\Assert::assertNotNull(
+                $actualValue,
+                sprintf('Persisted attribute "%s" was not found.', $attributeCode)
+            );
+
+            \PHPUnit\Framework\Assert::assertSame($expectedValue, $actualValue);
+        }
+    }
+
+    protected function assertProductPersistedAttributeDoesNotExist(Product $product, string $attributeCode): void
+    {
+        \PHPUnit\Framework\Assert::assertFalse(
+            $product->hasAttributeValue($attributeCode),
+            sprintf('Persisted attribute "%s" should not exist.', $attributeCode)
+        );
+    }
+
+    protected function findCollectionItemBySku(array $items, string $sku): array
+    {
+        foreach ($items as $item) {
+            if (($item['attributes']['sku'] ?? null) === $sku) {
+                return $item;
+            }
+        }
+
+        self::fail(sprintf('Product with sku "%s" was not found in collection.', $sku));
+    }
 }
