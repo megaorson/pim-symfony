@@ -9,6 +9,8 @@ This project demonstrates a **scalable, API-first backend** with:
 - field selection (`select`)
 - multi-field sorting (`sort`)
 - pagination
+- DTO + Provider/Processor architecture
+- functional API test coverage
 - clean modular architecture
 
 ---
@@ -21,6 +23,8 @@ Unlike traditional systems with fixed columns, this project uses a dynamic attri
 
 The system is designed with an **API-first approach**, where all business logic is exposed via REST endpoints and documented via OpenAPI.
 
+In addition to the API design itself, the project now includes a growing **functional test suite** for both attribute and product APIs, covering request/response contracts, validation behavior, query features, and persistence side effects.
+
 ---
 
 ## 🧬 Core Concept
@@ -30,7 +34,16 @@ Products are built using a dynamic attribute system:
 - Custom attributes (color, size, material, price, etc.)
 - Multiple data types (text, decimal, int, image)
 - No schema changes required for new attributes
-- Fully queryable via DSL filter, select and sort
+- Fully queryable via filter, select, sort, and pagination
+
+The external API representation is intentionally different from the internal persistence model:
+
+- `id` stays at the root level
+- `sku` is stored as a system field in the entity
+- API responses expose `sku` inside `attributes`
+- EAV values are stored in type-specific tables
+
+This keeps the public contract consistent while still allowing an efficient persistence model.
 
 ---
 
@@ -38,61 +51,62 @@ Products are built using a dynamic attribute system:
 
 The filtering system is implemented as a custom **domain-specific language (DSL)**.
 
-The architecture follows a classic:
+The architecture follows a classic flow:
 
-string → tokens → AST → execution
+`string → tokens → AST → execution`
 
-This approach is inspired by expression parsing techniques described in the book *The C++ Programming Language* by Bjarne Stroustrup (chapter about building a calculator).
-
-In that example, mathematical expressions like:
-
-2 + 3 * 5
-
-are parsed using a recursive descent parser and evaluated via a syntax tree.
+This approach is inspired by expression parsing techniques described in the book *The C++ Programming Language* by Bjarne Stroustrup, where expressions are parsed with recursive descent and evaluated via a syntax tree.
 
 ### In this project
 
 The same idea is applied to filtering:
 
-price > 100 AND sku ~ "test"
+```text
+(price GT 1000 OR name EQ 'Phone') AND qty GE 1
+```
 
 is processed as:
 
-string → tokens → AST → Doctrine QueryBuilder
+`string → tokens → AST → Doctrine QueryBuilder`
 
 ### Components
 
 - **Tokenizer**
-    - Converts string into tokens (IDENTIFIER, OPERATOR, VALUE, AND, OR, etc.)
+    - Converts string into tokens (IDENTIFIER, OPERATOR, VALUE, AND, OR, LPAREN, RPAREN, etc.)
 
 - **Parser**
     - Builds an AST using recursive descent parsing
 
 - **AST**
     - `ConditionNode` — single condition
-    - `GroupNode` — logical grouping (AND / OR)
+    - `GroupNode` — logical grouping (`AND` / `OR`)
 
 - **SmartEavFilterApplier**
     - Traverses AST and builds Doctrine QueryBuilder
 
-### Example
+### Supported Operators
 
-Filter:
+- `EQ`
+- `NE`
+- `GT`
+- `GE`
+- `LT`
+- `LE`
+- `IN`
+- `BEGINS`
 
-price > 100 AND sku ~ "test"
+### Supported Logic
 
-AST:
-
-AND
-├── Condition(price > 100)
-└── Condition(sku BEGINS "test")
+- `AND`
+- `OR`
+- parentheses / nested groups
 
 ### Why this approach
 
-- Supports complex expressions (AND / OR / nesting)
+- Supports complex expressions
 - Separates parsing from execution
-- Extensible (new operators, functions)
-- Enables clean validation and error handling (400 instead of 500)
+- Extensible for new operators and functions
+- Enables clean validation and predictable `400` responses instead of server errors
 
 ---
 
@@ -107,10 +121,12 @@ AND
 
 Values are stored in separate tables depending on type:
 
-- ProductAttributeValueText
-- ProductAttributeValueDecimal
-- ProductAttributeValueInt
-- ProductAttributeValueImage
+- `ProductAttributeValueText`
+- `ProductAttributeValueDecimal`
+- `ProductAttributeValueInt`
+- `ProductAttributeValueImage`
+
+This allows strongly typed storage while preserving the flexibility of an EAV model.
 
 ---
 
@@ -119,19 +135,20 @@ Values are stored in separate tables depending on type:
 ### Filtering (DSL)
 
 ```http
-GET /api/products?filter=price>1000
-GET /api/products?filter=sku~'A'
-GET /api/products?filter=price>1000 OR price<10
-GET /api/products?filter=sku~'A' AND price>1000
+GET /api/products?filter=price GT 1000
+GET /api/products?filter=name BEGINS 'A'
+GET /api/products?filter=price GT 1000 OR price LT 10
+GET /api/products?filter=(name EQ 'Alpha' OR name EQ 'Beta') AND qty GE 1
+GET /api/products?filter=sku EQ 'SKU-001'
+GET /api/products?filter=name IN ('One','Three')
 ```
 
 Features:
-- AST-based parsing
-- Works with system + EAV fields
-- AND / OR / parentheses
-- Converts DSL → Doctrine QueryBuilder
 
----
+- AST-based parsing
+- works with system + EAV fields
+- `AND` / `OR` / parentheses
+- converts DSL → Doctrine QueryBuilder
 
 ### Sorting
 
@@ -143,26 +160,26 @@ Features:
 ```
 
 Rules:
+
 - left-to-right priority
 - first field = highest priority
 - next fields = tie-breakers
 - supports system + EAV fields
-- stable sorting via fallback (`id DESC`)
-- NULL-safe ordering
-
----
+- stable sorting via fallback
+- null-safe ordering strategy
 
 ### Field Selection
 
 ```http
-?select=id,sku,price
+?select=sku,name,price
 ```
+
+Rules:
 
 - reduces payload size
 - `id` stays in root
-- other fields go into `attributes`
-
----
+- selected fields are returned inside `attributes`
+- works on collection responses
 
 ### Pagination
 
@@ -190,20 +207,37 @@ DELETE /api/products/{id}
 
 ## 📦 Example Response
 
+### Collection Response
+
 ```json
 {
-    "items": [
-        {
-            "id": 1,
-            "attributes": {
-                "sku": "SKU-001",
-                "price": 1200
-            }
-        }
-    ],
-    "totalItems": 57,
-    "limit": 20,
-    "offset": 0
+  "items": [
+    {
+      "id": 1,
+      "attributes": {
+        "sku": "SKU-001",
+        "name": "Phone",
+        "price": 1200
+      }
+    }
+  ],
+  "total": 57,
+  "limit": 20,
+  "offset": 0
+}
+```
+
+### Item Response
+
+```json
+{
+  "id": 1,
+  "attributes": {
+    "sku": "SKU-001",
+    "name": "Phone",
+    "price": 1200,
+    "qty": 5
+  }
 }
 ```
 
@@ -211,7 +245,25 @@ DELETE /api/products/{id}
 
 ## 🧱 Architecture
 
+```text
+Request
+  ↓
+DTO / Input
+  ↓
+Processor / Provider
+  ↓
+Domain Services
+  ↓
+Doctrine / QueryBuilder
+  ↓
+DTO / Output
+  ↓
+API Response
 ```
+
+### Collection Flow
+
+```text
 Request
   ↓
 ProductCollectionContextFactory
@@ -232,11 +284,9 @@ ResultMapper
 API Response
 ```
 
----
+### DSL → SQL Flow
 
-## 🔍 DSL → SQL Flow
-
-```
+```text
 Filter string
     ↓
 Tokenizer
@@ -270,21 +320,112 @@ fully consistent.
 
 ---
 
+## ✅ Functional Testing
+
+The project includes a dedicated **functional API testing foundation** based on `ApiTestCase`.
+
+### Test Foundation
+
+- isolated database cleanup before each test
+- reusable JSON request helpers
+- reusable API assertion helpers
+- attribute/product test factory helpers
+- dedicated `ProductApiTestCase`
+- response contract assertions
+- persistence-side assertions for product attributes
+
+### Covered Product Test Areas
+
+#### Create
+
+- create product with required attributes
+- create product with optional attributes
+- fail when required attribute is missing
+- fail when `sku` is missing
+- fail when unknown attribute is provided
+
+#### Get Item
+
+- return product by id
+- return optional attribute when present
+- return `404` when product does not exist
+
+#### Get Collection
+
+- empty collection response
+- collection with created products
+- pagination behavior
+- collection sorting behavior
+
+#### Patch
+
+- update existing attributes
+- add optional attribute
+- keep unchanged attributes intact
+- remove optional attribute with `null`
+- fail when required attribute becomes `null`
+- fail on unknown attribute
+- return `404` for missing product
+- validate persisted DB state after patch
+
+#### Filter DSL
+
+Functional coverage includes:
+
+- `EQ`
+- `NE`
+- `GT`
+- `GE`
+- `LT`
+- `LE`
+- `IN`
+- `BEGINS`
+- `AND`
+- `OR`
+- parentheses / nested groups
+- system fields like `sku`
+- invalid field / invalid syntax cases
+
+#### Select
+
+Collection-level select coverage includes:
+
+- selecting only requested fields
+- selecting system + EAV fields together
+- selecting a single field
+- combining select with pagination
+- validation for unknown selected fields
+
+### Testing Philosophy
+
+The functional test suite validates both:
+
+- **response contract** — status codes, JSON shape, selected fields, query behavior
+- **persistence side effects** — correct stored values in the product aggregate after create/patch
+
+This is especially important for EAV systems, where a response can look correct while persistence logic is broken.
+
+---
+
 ## ⚡ Performance Considerations
 
 Current strategy:
-- DISTINCT + JOIN + ORDER BY
+
+- joins for EAV filtering/sorting/select
 - hidden fields for sorting
-- optimized select
+- optimized collection mapping
 
 Trade-offs:
+
 - complex joins for EAV
-- heavy queries under large datasets
+- heavier queries under large datasets
 
 Planned improvements:
+
 - 2-step pagination (IDs → entities)
 - metadata caching
 - indexing strategy
+- large dataset benchmarks
 
 ---
 
@@ -293,10 +434,11 @@ Planned improvements:
 - Dynamic EAV attributes
 - Custom DSL filtering engine
 - Select / Sort / Pagination
-- API Platform integration
 - DTO-based API
+- Provider / Processor architecture
 - OpenAPI / Swagger docs
 - EasyAdmin backend
+- Functional API tests
 - Translations support
 
 ---
@@ -306,16 +448,19 @@ Planned improvements:
 - Complex SQL queries
 - Requires indexing strategy
 - EAV complexity under high load
+- More domain/application code than fixed-schema CRUD
 
 ---
 
 ## 🔮 Roadmap
 
 - Production-grade pagination (2-step)
-- Attribute capabilities (filterable/sortable/selectable)
+- Attribute capabilities hardening (`filterable`, `sortable`, `selectable`)
 - Attribute groups / families
 - Multi-tenant support
 - Search integration (Elastic/OpenSearch)
+- Large-scale benchmark dataset
+- More write-side validation scenarios
 
 ---
 
@@ -328,6 +473,7 @@ Planned improvements:
 - MySQL
 - EasyAdmin
 - OpenAPI / Swagger
+- PHPUnit
 
 ---
 
@@ -355,6 +501,8 @@ This project demonstrates:
 - EAV modeling
 - custom query language (DSL)
 - API-first design
+- DTO + Provider/Processor patterns
+- functional API testing strategy
 - scalable and extensible system design
 
 ---
