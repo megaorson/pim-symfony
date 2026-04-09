@@ -77,3 +77,21 @@ services:
     App\Service\Eav\AttributeValueHandlerRegistry:
         arguments:
             $handlers: !tagged_iterator app.attribute_value_handler
+
+    App\Service\Storage\FileStorageInterface:
+        class: App\Service\Storage\LocalProductImageStorage
+        arguments:
+            $projectDir: '%kernel.project_dir%'
+            $uploadBaseDir: 'public/uploads/images'
+            $uploadBasePublicPath: '/uploads/images'
+
+    App\Controller\Api\ProductImageUploadAction:
+        tags: [ 'controller.service_arguments' ]
+
+    App\Subscriber\ProductImageCleanupSubscriber:
+        tags:
+            - { name: doctrine.event_listener, event: preRemove }
+
+    App\Service\Eav\ProductAttributeUsageChecker:
+        arguments:
+            $valueEntityMap: '%app.eav_value_entity_map%'

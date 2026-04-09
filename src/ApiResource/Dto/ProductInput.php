@@ -14,8 +14,6 @@ final class ProductInput
     /**
      * @var array<string, mixed>
      */
-    #[Assert\NotNull]
     #[Assert\Type('array')]
-    #[Assert\Count(min: 1)]
     public array $attributes = [];
 }

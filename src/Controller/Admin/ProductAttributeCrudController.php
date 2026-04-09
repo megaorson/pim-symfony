@@ -5,24 +5,49 @@ namespace App\Controller\Admin;
 
 use App\Entity\ProductAttribute;
 use App\Service\Eav\AttributeTypeRegistry;
+use App\Service\Eav\ProductAttributeUsageChecker;
+use Doctrine\ORM\EntityManagerInterface;
 use EasyCorp\Bundle\EasyAdminBundle\Config\Crud;
+use EasyCorp\Bundle\EasyAdminBundle\Context\AdminContext;
 use EasyCorp\Bundle\EasyAdminBundle\Controller\AbstractCrudController;
 use EasyCorp\Bundle\EasyAdminBundle\Field\BooleanField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\ChoiceField;
 use EasyCorp\Bundle\EasyAdminBundle\Field\TextField;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class ProductAttributeCrudController extends AbstractCrudController
 {
     public function __construct(
         private readonly AttributeTypeRegistry $attributeTypeRegistry,
-        private readonly TranslatorInterface $translator
+        private readonly TranslatorInterface $translator,
+        private readonly ProductAttributeUsageChecker $usageChecker,
     ) {
     }
 
     public static function getEntityFqcn(): string
     {
         return ProductAttribute::class;
+    }
+
+    public function deleteEntity(EntityManagerInterface $em, $entityInstance): void
+    {
+        if (!$entityInstance instanceof ProductAttribute) {
+            return;
+        }
+
+        if ($this->usageChecker->isUsed($entityInstance)) {
+            $this->addFlash(
+                'danger',
+                $this->translator->trans('product_attribute.delete_forbidden_in_use', [
+                    '%code%' => $entityInstance->getCode(),
+                ])
+            );
+
+            return;
+        }
+
+        parent::deleteEntity($em, $entityInstance);
     }
 
     public function configureFields(string $pageName): iterable

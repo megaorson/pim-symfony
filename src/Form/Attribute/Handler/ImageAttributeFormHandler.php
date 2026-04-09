@@ -7,6 +7,8 @@ use App\Entity\Product;
 use App\Entity\ProductAttribute;
 use App\Entity\ProductAttributeValueImage;
 use App\Service\Eav\AttributeTypeRegistry;
+use App\Service\Product\ProductImageUploader;
+use App\Service\Storage\FileStorageInterface;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Component\Form\Extension\Core\Type\CheckboxType;
 use Symfony\Component\Form\Extension\Core\Type\FileType;
@@ -17,8 +19,14 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 
 final class ImageAttributeFormHandler extends AbstractAttributeFormHandler
 {
-    public function __construct(EntityManagerInterface $em, AttributeTypeRegistry $attributeTypeRegistry, private readonly TranslatorInterface $translator, private readonly string $uploadDir)
-    {
+    public function __construct(
+        EntityManagerInterface $em,
+        AttributeTypeRegistry $attributeTypeRegistry,
+        private readonly TranslatorInterface $translator,
+        private readonly string $uploadDir,
+        private readonly ProductImageUploader $productImageUploader,
+        private readonly FileStorageInterface $fileStorage,
+    ) {
         parent::__construct($em, $attributeTypeRegistry);
     }
 
@@ -29,20 +37,24 @@ final class ImageAttributeFormHandler extends AbstractAttributeFormHandler
 
     public function handleSubmit(FormInterface $builder, ProductAttribute $attribute, Product $product): void
     {
-        parent::handleSubmit($builder, $attribute, $product);
+        $fieldName = $attribute->getCode();
+        $deleteField = $fieldName . '_delete';
         $existing = $this->findExisting($product, $attribute);
-        $deleteField = $attribute->getCode() . '_delete';
 
-        if ($builder->has($deleteField)) {
-            $delete = $builder->get($deleteField)->getData();
-            if ($delete && $existing && $existing->getValue()) {
-                $oldPath = $this->uploadDir . '/' . $existing->getValue();
-                if (file_exists($oldPath)) {
-                    unlink($oldPath);
-                }
-                $this->em->remove($existing);
-                $this->em->flush();
-            }
+        if ($builder->has($deleteField) && $builder->get($deleteField)->getData() === true) {
+            $this->productImageUploader->delete($product, $attribute);
+
+            return;
+        }
+
+        if (!$builder->has($fieldName)) {
+            return;
+        }
+
+        $value = $builder->get($fieldName)->getData();
+
+        if ($value instanceof UploadedFile) {
+            $this->productImageUploader->upload($product, $attribute, $value);
         }
     }
 
@@ -53,48 +65,29 @@ final class ImageAttributeFormHandler extends AbstractAttributeFormHandler
         }
 
         $existing = $this->findExisting($product, $attribute);
-        $filePath = $existing ? $this->uploadDir . '/' . $existing->getValue() : null;
-        $fileName = $existing?->getValue();
+        $relativePath = $existing?->getValue();
+        $absolutePath = $relativePath ? rtrim($this->uploadDir, '/') . '/' . ltrim($relativePath, '/') : null;
+        $publicUrl = $this->fileStorage->publicUrl($relativePath);
 
-        $builder->add($attribute->getCode(), $this->getFormType(), [
-            'label' => $attribute->getName(),
-            'required' => false,
-            'mapped' => false,
-            'data' => ($filePath && file_exists($filePath)) ? new File($filePath) : null,
-            'help' => $fileName ? '<img src="/uploads/images/' . $fileName . '" width="120">' : null,
-            'help_html' => true,
-        ])->add($attribute->getCode() . '_delete', CheckboxType::class, [
-            'label' => $this->translator->trans('admin.product.image.remove'),
-            'required' => false,
-            'mapped' => false,
-        ]);
+        $builder
+            ->add($attribute->getCode(), $this->getFormType(), [
+                'label' => $attribute->getName(),
+                'required' => false,
+                'mapped' => false,
+                'data' => ($absolutePath && file_exists($absolutePath)) ? new File($absolutePath) : null,
+                'help' => $publicUrl ? sprintf('<img src="%s" width="120">', $publicUrl) : null,
+                'help_html' => true,
+            ])
+            ->add($attribute->getCode() . '_delete', CheckboxType::class, [
+                'label' => $this->translator->trans('admin.product.image.remove'),
+                'required' => false,
+                'mapped' => false,
+            ]);
     }
 
     protected function getCollection(Product $product)
     {
         return $product->getImageValues();
-    }
-
-    protected function processFiles($fileName, $value, $existing = null): void
-    {
-        if ($existing && $existing->getValue()) {
-            $oldPath = $this->uploadDir . '/' . $existing->getValue();
-            if (file_exists($oldPath)) {
-                unlink($oldPath);
-            }
-        }
-        $value->move($this->uploadDir, $fileName);
-    }
-
-    protected function normalizeValue($value, $existing = null, Product $product = null)
-    {
-        if (!$value instanceof UploadedFile) {
-            return $existing?->getValue();
-        }
-
-        $fileName = bin2hex(random_bytes(16)) . '.' . $value->guessExtension();
-        $this->processFiles($fileName, $value, $existing);
-        return $fileName;
     }
 
     protected function getAttributeType(): string

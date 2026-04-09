@@ -31,7 +31,7 @@ class Product implements TimestampableInterface
     #[ORM\OneToMany(
         mappedBy: 'product',
         targetEntity: ProductAttributeValueDecimal::class,
-        cascade: ['persist'],
+        cascade: ['persist', 'remove'],
         orphanRemoval: true
     )]
     private Collection $decimalValues;
@@ -42,7 +42,7 @@ class Product implements TimestampableInterface
     #[ORM\OneToMany(
         targetEntity: ProductAttributeValueText::class,
         mappedBy: 'product',
-        cascade: ['persist'],
+        cascade: ['persist', 'remove'],
         orphanRemoval: true
     )]
     private Collection $textValues;
@@ -53,7 +53,7 @@ class Product implements TimestampableInterface
     #[ORM\OneToMany(
         targetEntity: ProductAttributeValueInt::class,
         mappedBy: 'product',
-        cascade: ['persist'],
+        cascade: ['persist', 'remove'],
         orphanRemoval: true
     )]
     private Collection $intValues;
@@ -64,7 +64,7 @@ class Product implements TimestampableInterface
     #[ORM\OneToMany(
         targetEntity: ProductAttributeValueImage::class,
         mappedBy: 'product',
-        cascade: ['persist'],
+        cascade: ['persist', 'remove'],
         orphanRemoval: true
     )]
     private Collection $imageValues;

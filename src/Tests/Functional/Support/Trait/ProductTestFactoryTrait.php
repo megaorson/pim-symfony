@@ -90,6 +90,16 @@ trait ProductTestFactoryTrait
         return $this->responseData();
     }
 
+    protected function createProductThroughApiByArray(
+        array $product = []
+    ): array {
+        $this->jsonPost('/api/products', $product);
+
+        self::assertResponseStatusCodeSame(201);
+
+        return $this->responseData();
+    }
+
     protected function createProductIdThroughApi(
         string $sku = 'SKU-001',
         array $attributes = []

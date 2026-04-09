@@ -15,11 +15,13 @@ use App\ApiResource\Dto\ProductCollectionOutput;
 use App\ApiResource\Dto\ProductInput;
 use App\ApiResource\Dto\ProductOutput;
 use App\ApiResource\Dto\ProductPatchInput;
+use App\Controller\Api\ProductImageUploadAction;
 use App\State\ProductCollectionProvider;
 use App\State\ProductCreateProcessor;
 use App\State\ProductDeleteProcessor;
 use App\State\ProductItemProvider;
 use App\State\ProductUpdateProcessor;
+use ApiPlatform\OpenApi\Model\RequestBody;
 
 #[ApiResource(
     shortName: 'Product',
@@ -66,6 +68,37 @@ use App\State\ProductUpdateProcessor;
             processor: ProductDeleteProcessor::class,
             read: false
         ),
+        new Post(
+            uriTemplate: '/products/{id}/images',
+            controller: ProductImageUploadAction::class,
+            deserialize: false,
+            read: false,
+            name: 'product_image_upload',
+            openapi: new Operation(
+                summary: 'Upload image for product image attribute',
+                requestBody: new RequestBody(
+                    content: new \ArrayObject([
+                        'multipart/form-data' => [
+                            'schema' => [
+                                'type' => 'object',
+                                'properties' => [
+                                    'attributeCode' => [
+                                        'type' => 'string',
+                                        'example' => 'main_image',
+                                    ],
+                                    'file' => [
+                                        'type' => 'string',
+                                        'format' => 'binary',
+                                    ],
+                                ],
+                                'required' => ['attributeCode', 'file'],
+                            ],
+                        ],
+                    ])
+                )
+            )
+        ),
+
     ]
 )]
 final class ProductApiResource

@@ -7,6 +7,22 @@ use App\Tests\Functional\Support\ProductApiTestCase;
 
 final class ProductCreateTest extends ProductApiTestCase
 {
+    public function testCreateProductWithSkuOnly(): void
+    {
+        $data = $this->createProductThroughApiByArray([
+            'sku' => 'SKU-001',
+        ]);
+        self::assertResponseStatusCodeSame(201);
+
+        $this->assertProductResponseContains($data, 'SKU-001', [
+            'sku' => 'SKU-001',
+        ]);
+
+        $product = $this->getProductById((int) $data['id']);
+
+        self::assertSame('SKU-001', $product->getSku());
+    }
+
     public function testCreateProductWithMinimalRequiredAttributes(): void
     {
         $this->createDefaultProductAttributes();

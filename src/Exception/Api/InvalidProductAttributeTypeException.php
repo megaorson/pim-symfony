@@ -5,15 +5,24 @@ namespace App\Exception\Api;
 
 final class InvalidProductAttributeTypeException extends AbstractApiException
 {
-    public function __construct(string $message, string $type, array $allowedTypes)
-    {
+    public function __construct(
+        string  $message,
+        ?string $type = null,
+        array $allowedTypes = [],
+        ?string $attributeCode = null,
+        ?string $expectedType = null,
+        ?string $actualType = null,
+    ) {
         parent::__construct(
             message: $message,
-            status: 400,
-            type: 'invalid_product_attribute_type',
+            status : 400,
+            type   : 'invalid_product_attribute_type',
             context: [
-                'type' => $type,
-                'allowedTypes' => array_values($allowedTypes),
+                'attributeCode' => $attributeCode,
+                'expectedType'  => $expectedType,
+                'actualType'    => $actualType,
+                'type'          => $type,
+                'allowedTypes'  => array_values($allowedTypes),
             ],
         );
     }

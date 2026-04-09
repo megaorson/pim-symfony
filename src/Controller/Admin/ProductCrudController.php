@@ -14,7 +14,7 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 final class ProductCrudController extends AbstractCrudController
 {
     public function __construct(
-        private readonly TranslatorInterface $translator
+        private readonly TranslatorInterface $translator,
     ) {
     }
 

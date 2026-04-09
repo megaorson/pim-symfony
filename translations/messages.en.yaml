@@ -36,6 +36,7 @@ console:
         success: 'Admin user created successfully.'
 
 product:
+    not_found: 'Product not found.'
     create:
         duplicate_sku: 'Product with SKU "%sku%" already exists.'
     collection:
@@ -56,7 +57,15 @@ product:
     error:
         missing_required_attributes: 'Required product attributes are missing or empty.'
 
+product_image:
+    attribute_code_required: 'Attribute code is required.'
+    file_required: 'Image file is required.'
+    invalid_attribute_type: 'Attribute must be of image type.'
+    invalid_mime_type: 'Unsupported image mime type.'
+    upload_success: 'Image uploaded successfully.'
+
 product_attribute:
+    delete_forbidden_in_use: 'Attribute "%code%" cannot be deleted because it is already used by products.'
     not_found: 'Product attribute with id "%id%" was not found.'
     output:
         id_is_null: 'Product attribute "%code%" has no ID.'

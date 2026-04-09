@@ -30,15 +30,11 @@ final class ProductTimestampOnFlush
         $productsToTouch = [];
 
         foreach ($uow->getScheduledEntityInsertions() as $entity) {
-            $this->collectProduct($entity, $productsToTouch);
+            $this->collectProduct($entity, $productsToTouch, $uow);
         }
 
         foreach ($uow->getScheduledEntityUpdates() as $entity) {
-            $this->collectProduct($entity, $productsToTouch);
-        }
-
-        foreach ($uow->getScheduledEntityDeletions() as $entity) {
-            $this->collectProduct($entity, $productsToTouch);
+            $this->collectProduct($entity, $productsToTouch, $uow);
         }
 
         if ($productsToTouch === []) {
@@ -49,6 +45,10 @@ final class ProductTimestampOnFlush
         $now = new \DateTimeImmutable();
 
         foreach ($productsToTouch as $product) {
+            if ($uow->isScheduledForDelete($product)) {
+                continue;
+            }
+
             if ($product->getCreatedAt() === null) {
                 $product->setCreatedAt($now);
             }
@@ -67,9 +67,13 @@ final class ProductTimestampOnFlush
     /**
      * @param array<int|string, Product> $productsToTouch
      */
-    private function collectProduct(object $entity, array &$productsToTouch): void
+    private function collectProduct(object $entity, array &$productsToTouch, UnitOfWork $uow): void
     {
         if ($entity instanceof Product) {
+            if ($uow->isScheduledForDelete($entity)) {
+                return;
+            }
+
             $productsToTouch[$this->getProductKey($entity)] = $entity;
             return;
         }
@@ -82,9 +86,17 @@ final class ProductTimestampOnFlush
             return;
         }
 
+        if ($uow->isScheduledForDelete($entity)) {
+            return;
+        }
+
         $product = $entity->getProduct();
 
         if (!$product instanceof Product) {
+            return;
+        }
+
+        if ($uow->isScheduledForDelete($product)) {
             return;
         }
 

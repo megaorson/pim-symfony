@@ -6,8 +6,10 @@ namespace App\State;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\State\ProcessorInterface;
 use App\Entity\ProductAttribute;
+use App\Exception\Api\ProductAttributeInUseException;
 use App\Exception\Api\ProductAttributeNotFoundException;
 use App\Repository\ProductAttributeRepository;
+use App\Service\Eav\ProductAttributeUsageChecker;
 use App\Service\ProductAttribute\ProductAttributeDeleteService;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -19,6 +21,7 @@ final class ProductAttributeDeleteProcessor implements ProcessorInterface
         private readonly ProductAttributeRepository $productAttributeRepository,
         private readonly ProductAttributeDeleteService $productAttributeDeleteService,
         private readonly TranslatorInterface $translator,
+        private readonly ProductAttributeUsageChecker $usageChecker,
     ) {
     }
 
@@ -33,6 +36,18 @@ final class ProductAttributeDeleteProcessor implements ProcessorInterface
                     ['%id%' => (string) ($uriVariables['id'] ?? '')]
                 ),
                 $uriVariables['id'] ?? null
+            );
+        }
+
+        if ($this->usageChecker->isUsed($attribute)) {
+            throw new ProductAttributeInUseException(
+                $this->translator->trans(
+                    'product_attribute.in_use',
+                    [
+                        '%id%' => (string) $attribute->getId(),
+                        '%code%' => $attribute->getCode(),
+                    ]
+                )
             );
         }
 
