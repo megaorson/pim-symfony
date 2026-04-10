@@ -16,6 +16,7 @@ services:
 
     App\:
         resource: '../src/'
+        exclude: '../src/Entity/*'
 
     App\Form\Attribute\Handler\:
         resource: '../src/Form/Attribute/Handler/'

@@ -34,6 +34,12 @@ security:
     access_control:
         - { path: ^/admin, roles: ROLE_ADMIN }
 
+#    role_hierarchy:
+#        ROLE_SUPER_ADMIN: [ ROLE_ADMIN, ROLE_ALLOWED_TO_SWITCH ]
+#        ROLE_ADMIN: [ ROLE_OWNER ]
+#        ROLE_OWNER: [ ROLE_USER ]
+#        ROLE_USER: [ ROLE_MANAGER ]
+
 when@test:
     security:
         password_hashers:

@@ -16,7 +16,7 @@ trait ProductImageTestTrait
         parent::setUp();
 
         $this->projectDir = static::getContainer()->getParameter('kernel.project_dir');
-        $this->fixturesDir = $this->projectDir . '/src/Tests/Fixtures/files';
+        $this->fixturesDir = $this->projectDir . '/tests/Fixtures/files';
 
         $this->cleanupUploads();
     }
