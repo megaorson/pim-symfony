@@ -72,6 +72,27 @@ final class ProductImageUploadTest extends ApiTestCase
         self::assertSame('product_attribute_not_found', $response['type']);
     }
 
+    public function testUploadFailsWhenProductNotFound(): void
+    {
+        $this->createDefaultProductAttributes();
+
+        $attribute = $this->createProductAttribute(
+            code: 'main_image',
+            type: ProductAttributeValueImage::TYPE,
+            name: 'Main Image',
+        );
+
+        $file = $this->createUploadedFile('test-image.png', 'image/png');
+
+        $result = $this->uploadProductImage(999999, $attribute->getCode(), $file);
+
+        self::assertResponseStatusCodeSame(404);
+
+        $response = $result->toArray(false);
+
+        self::assertSame('product_not_found', $response['type']);
+    }
+
     public function testUploadFailsWhenAttributeIsNotImage(): void
     {
         $this->createDefaultProductAttributes();
@@ -92,6 +113,29 @@ final class ProductImageUploadTest extends ApiTestCase
         $response = $result->toArray(false);
 
         self::assertSame('invalid_product_attribute_type', $response['type']);
+    }
+
+    public function testUploadFailsWhenImageFileIsEmpty(): void
+    {
+        $this->createDefaultProductAttributes();
+
+        $attribute = $this->createProductAttribute(
+            code: 'main_image',
+            type: ProductAttributeValueImage::TYPE,
+            name: 'Main Image',
+        );
+
+        $product = $this->createProductThroughApi('SKU-IMG-EMPTY-1');
+
+        $file = $this->createUploadedFile('empty.png', 'image/png');
+
+        $result = $this->uploadProductImage($product['id'], $attribute->getCode(), $file);
+
+        self::assertResponseStatusCodeSame(400);
+
+        $response = $result->toArray(false);
+
+        self::assertSame('invalid_product_image_mime_type', $response['type']);
     }
 
     public function testUploadFailsWhenMimeInvalid(): void

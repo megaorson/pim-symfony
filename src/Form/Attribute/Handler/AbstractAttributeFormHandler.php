@@ -24,6 +24,7 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
     }
 
     abstract protected function getFormType(): string;
+
     abstract protected function getAttributeType(): string;
 
     protected function createEntity(): ProductAttributeTypeInterface
@@ -42,7 +43,7 @@ abstract class AbstractAttributeFormHandler implements AttributeFormHandlerInter
         $existing = $this->findExisting($product, $attribute);
         $builder->add($attribute->getCode(), $this->getFormType(), [
             'label' => $attribute->getName(),
-            'required' => false,
+            'required' => $attribute->isRequired(),
             'mapped' => false,
             'data' => $existing?->getValue(),
         ]);

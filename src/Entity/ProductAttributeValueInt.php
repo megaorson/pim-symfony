@@ -3,12 +3,18 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Contracts\TimestampableInterface;
+use App\Entity\Traits\TimestampableTrait;
 use App\Repository\ProductAttributeValueIntRepository;
+use App\Subscriber\TimestampSubscriber;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductAttributeValueIntRepository::class)]
-class ProductAttributeValueInt extends ProductAttributeValueAbstract
+#[ORM\EntityListeners([TimestampSubscriber::class])]
+class ProductAttributeValueInt extends ProductAttributeValueAbstract implements TimestampableInterface
 {
+    use TimestampableTrait;
+
     public const TYPE = 'int';
 
     #[ORM\Id]

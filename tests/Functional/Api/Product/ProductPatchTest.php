@@ -3,6 +3,7 @@ declare(strict_types=1);
 
 namespace App\Tests\Functional\Api\Product;
 
+use App\Entity\ProductAttributeValueDecimal;
 use App\Tests\Functional\Support\ProductApiTestCase;
 
 final class ProductPatchTest extends ProductApiTestCase
@@ -217,6 +218,57 @@ final class ProductPatchTest extends ProductApiTestCase
         );
 
         self::assertResponseStatusCodeSame(400);
+    }
+
+    public function testPatchProductRemovesAttributeValue(): void
+    {
+        $attribute = $this->createProductAttribute(
+            code: 'price_remove_test',
+            type: 'decimal',
+            name: 'Price Remove Test',
+        );
+
+        $product = $this->createProductThroughApiByArray([
+            'sku' => 'SKU-PATCH-REMOVE-ATTR-1',
+            'attributes' => [
+                'price_remove_test' => 199.99,
+            ],
+        ]);
+
+        self::assertNotEmpty($product['id']);
+
+        $existingValues = $this->entityManager
+            ->getRepository(ProductAttributeValueDecimal::class)
+            ->findBy([
+                'product' => $product['id'],
+                'attribute' => $attribute->getId(),
+            ]);
+
+        self::assertCount(1, $existingValues);
+
+        $this->jsonPatch('/api/products/' . $product['id'], [
+            'attributes' => [
+                'price_remove_test' => null,
+            ],
+        ]);
+
+        self::assertResponseStatusCodeSame(200);
+
+        $response = $this->responseData();
+
+        self::assertArrayHasKey('attributes', $response);
+        self::assertArrayNotHasKey('price_remove_test', $response['attributes']);
+
+        $this->entityManager->clear();
+
+        $valuesAfterPatch = $this->entityManager
+            ->getRepository(ProductAttributeValueDecimal::class)
+            ->findBy([
+                'product' => $product['id'],
+                'attribute' => $attribute->getId(),
+            ]);
+
+        self::assertCount(0, $valuesAfterPatch);
     }
 
     public function testPatchProductReturns404WhenProductDoesNotExist(): void

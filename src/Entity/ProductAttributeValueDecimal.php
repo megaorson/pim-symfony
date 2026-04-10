@@ -3,12 +3,18 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Contracts\TimestampableInterface;
+use App\Entity\Traits\TimestampableTrait;
 use App\Repository\ProductAttributeValueDecimalRepository;
+use App\Subscriber\TimestampSubscriber;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductAttributeValueDecimalRepository::class)]
-class ProductAttributeValueDecimal extends ProductAttributeValueAbstract
+#[ORM\EntityListeners([TimestampSubscriber::class])]
+class ProductAttributeValueDecimal extends ProductAttributeValueAbstract implements TimestampableInterface
 {
+    use TimestampableTrait;
+
     public const TYPE = 'decimal';
 
     #[ORM\Id]

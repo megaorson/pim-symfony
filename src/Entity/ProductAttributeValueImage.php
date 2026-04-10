@@ -3,12 +3,18 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Contracts\TimestampableInterface;
+use App\Entity\Traits\TimestampableTrait;
 use App\Repository\ProductAttributeValueImageRepository;
+use App\Subscriber\TimestampSubscriber;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductAttributeValueImageRepository::class)]
-class ProductAttributeValueImage extends ProductAttributeValueAbstract
+#[ORM\EntityListeners([TimestampSubscriber::class])]
+class ProductAttributeValueImage extends ProductAttributeValueAbstract implements TimestampableInterface
 {
+    use TimestampableTrait;
+
     public const TYPE = 'image';
 
     #[ORM\Id]

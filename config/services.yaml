@@ -11,12 +11,19 @@ parameters:
 
 services:
     _defaults:
-        autowire: true
-        autoconfigure: true
+        autowire: true # because it's test project
+        autoconfigure: true # because it's test project
 
     App\:
         resource: '../src/'
-        exclude: '../src/Entity/*'
+        exclude:
+            - '../src/Entity/'
+            - '../src/DependencyInjection/'
+            - '../src/Kernel.php'
+            - '../src/Migrations/'
+            - '../src/Tests/'
+            - '../src/EventListener/'
+            - '../src/Validator/'
 
     App\Form\Attribute\Handler\:
         resource: '../src/Form/Attribute/Handler/'

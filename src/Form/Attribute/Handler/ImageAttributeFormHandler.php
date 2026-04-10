@@ -64,6 +64,10 @@ final class ImageAttributeFormHandler extends AbstractAttributeFormHandler
             return;
         }
 
+        if (!$product->getId()) {
+            return;
+        }
+
         $existing = $this->findExisting($product, $attribute);
         $relativePath = $existing?->getValue();
         $absolutePath = $relativePath ? rtrim($this->uploadDir, '/') . '/' . ltrim($relativePath, '/') : null;
@@ -72,7 +76,7 @@ final class ImageAttributeFormHandler extends AbstractAttributeFormHandler
         $builder
             ->add($attribute->getCode(), $this->getFormType(), [
                 'label' => $attribute->getName(),
-                'required' => false,
+                'required' => $attribute->isRequired(),
                 'mapped' => false,
                 'data' => ($absolutePath && file_exists($absolutePath)) ? new File($absolutePath) : null,
                 'help' => $publicUrl ? sprintf('<img src="%s" width="120">', $publicUrl) : null,

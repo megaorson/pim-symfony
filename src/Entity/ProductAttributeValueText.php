@@ -3,13 +3,19 @@ declare(strict_types=1);
 
 namespace App\Entity;
 
+use App\Entity\Contracts\TimestampableInterface;
+use App\Entity\Traits\TimestampableTrait;
 use App\Repository\ProductAttributeValueTextRepository;
+use App\Subscriber\TimestampSubscriber;
 use Doctrine\DBAL\Types\Types;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity(repositoryClass: ProductAttributeValueTextRepository::class)]
-class ProductAttributeValueText extends ProductAttributeValueAbstract
+#[ORM\EntityListeners([TimestampSubscriber::class])]
+class ProductAttributeValueText extends ProductAttributeValueAbstract implements TimestampableInterface
 {
+    use TimestampableTrait;
+
     public const TYPE = 'text';
 
     #[ORM\Id]
