@@ -5,10 +5,13 @@ namespace App\Service\Eav\Filter\Ast;
 
 final class ConditionNode implements Node
 {
+    /**
+     * @param scalar|list<scalar> $value
+     */
     public function __construct(
         public readonly string $field,
         public readonly string $operator,
-        public readonly string $value
+        public readonly mixed $value,
     ) {
     }
 }

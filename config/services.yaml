@@ -59,11 +59,6 @@ services:
         tags:
             - { name: 'app.product.collection_applier', priority: 100 }
 
-    App\State\ProductCollectionProvider:
-        arguments:
-            $collectionAppliers: !tagged_iterator
-                tag: 'app.product.collection_applier'
-
     App\Subscriber\TimestampSubscriber:
         tags:
             - { name: doctrine.event_subscriber }

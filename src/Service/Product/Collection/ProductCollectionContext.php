@@ -28,4 +28,9 @@ final class ProductCollectionContext
     {
         return $this->shouldReturnAllFields() || in_array($field, $this->selectedFields, true);
     }
+
+    public function hasExplicitSelect(): bool
+    {
+        return $this->selectedFields !== [];
+    }
 }
