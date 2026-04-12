@@ -16,7 +16,7 @@ final class Version20260411220000 extends AbstractMigration
     public function up(Schema $schema): void
     {
         // product
-        $this->addSql('CREATE INDEX idx_product_sku ON product (sku)');
+        $this->addSql('CREATE UNIQUE INDEX idx_product_sku ON product (sku)');
         $this->addSql('CREATE INDEX idx_product_created_at ON product (created_at)');
         $this->addSql('CREATE INDEX idx_product_updated_at ON product (updated_at)');
 

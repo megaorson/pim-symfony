@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 namespace App\Service\Product\Collection\Read\Fetcher;
 
-use App\Service\Product\Collection\Read\Filter\FilterCompilerFacade;
+use App\Service\Product\Collection\Read\Filter\FilterCountCompilerFacade;
 use App\Service\Product\Collection\Read\ProductCollectionQueryPlan;
 use Doctrine\DBAL\Connection;
 
@@ -11,28 +11,16 @@ final readonly class ProductCountFetcher
 {
     public function __construct(
         private Connection $connection,
-        private FilterCompilerFacade $filterCompilerFacade,
+        private FilterCountCompilerFacade $filterCountCompilerFacade,
     ) {
     }
 
     public function count(ProductCollectionQueryPlan $plan): int
     {
-        $compiledFilter = $this->filterCompilerFacade->compile($plan);
+        $compiled = $this->filterCountCompilerFacade->compile($plan);
 
-        $qb = $this->connection->createQueryBuilder();
-
-        $qb
-            ->select('COUNT(*)')
-            ->from('product', 'p');
-
-        if (!$compiledFilter->isEmpty()) {
-            $qb->where($compiledFilter->sql);
-
-            foreach ($compiledFilter->parameters as $name => $value) {
-                $qb->setParameter($name, $value);
-            }
-        }
-
-        return (int) $qb->executeQuery()->fetchOne();
+        return (int) $this->connection
+            ->executeQuery($compiled->sql, $compiled->parameters)
+            ->fetchOne();
     }
 }

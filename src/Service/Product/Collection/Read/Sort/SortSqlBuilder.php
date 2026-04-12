@@ -6,6 +6,7 @@ namespace App\Service\Product\Collection\Read\Sort;
 use App\Exception\Api\InvalidSortException;
 use App\Service\Eav\AttributeTypeRegistry;
 use App\Service\Eav\Dto\AttributeMetadata;
+use App\Service\Product\Collection\Read\Filter\OptimizedFilterSource;
 use App\Service\Product\Collection\Read\ProductCollectionQueryPlan;
 use App\Service\Product\Field\ProductSystemFieldRegistry;
 use App\Service\ProductAttributeValue\ClassNameToTableName;
@@ -22,20 +23,36 @@ final readonly class SortSqlBuilder
     ) {
     }
 
-    public function apply(QueryBuilder $qb, ProductCollectionQueryPlan $plan, string $rootAlias = 'p'): void
-    {
+    public function apply(
+        QueryBuilder $qb,
+        ProductCollectionQueryPlan $plan,
+        string $rootAlias = 'p',
+        ?string $filterAlias = null,
+        ?OptimizedFilterSource $optimizedSource = null,
+    ): void {
         $joinIndex = 0;
 
         foreach ($plan->sorts as $sort) {
             $field = $sort['field'];
             $direction = $sort['direction'];
 
+            if (
+                $filterAlias !== null
+                && $optimizedSource !== null
+                && $optimizedSource->hasProjectedField($field)
+            ) {
+                $qb->addOrderBy(
+                    sprintf('%s.%s', $filterAlias, $optimizedSource->getProjectedColumn($field)),
+                    $direction
+                );
+                continue;
+            }
+
             if ($this->systemFieldRegistry->isSystemField($field)) {
                 $qb->addOrderBy(
                     sprintf('%s.%s', $rootAlias, $this->systemFieldRegistry->getDoctrineField($field)),
                     $direction
                 );
-
                 continue;
             }
 

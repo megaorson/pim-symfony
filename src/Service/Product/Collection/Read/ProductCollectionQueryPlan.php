@@ -34,29 +34,4 @@ final readonly class ProductCollectionQueryPlan
     {
         return $this->selectAllFields;
     }
-
-    /**
-     * @return list<int>
-     */
-    public function getSelectedAttributeIds(): array
-    {
-        return array_map(
-            static fn (AttributeMetadata $metadata): int => $metadata->id,
-            array_values($this->selectedAttributesByCode)
-        );
-    }
-
-    /**
-     * @return array<int, AttributeMetadata>
-     */
-    public function getSelectedAttributesById(): array
-    {
-        $result = [];
-
-        foreach ($this->selectedAttributesByCode as $metadata) {
-            $result[$metadata->id] = $metadata;
-        }
-
-        return $result;
-    }
 }
