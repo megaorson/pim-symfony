@@ -57,17 +57,44 @@ Filtering is implemented as a custom **domain-specific language (DSL)**.
 
 Architecture:
 
-`string → tokens → AST → SQL`
+`string → tokens → AST → optimized logical plan (DNF) → SQL`
 
 This approach is inspired by expression parsing techniques described in the book *The C++ Programming Language* by Bjarne Stroustrup, where expressions are parsed with recursive descent and evaluated via a syntax tree.
 
 This project uses recursive descent parsing and an AST-based execution model inspired by classic expression parser design.
 
+### Advanced Query Optimization
+
+The filter engine includes an additional **query planning layer**:
+
+1. AST → DNF transformation
+2. AND → JOIN
+3. OR → UNION DISTINCT
+4. fallback → EXISTS
+
 Example:
 
-```text
-(price GT 1000 OR name EQ 'Phone') AND qty GE 1
-```
+(price GT 1000 OR qty GT 5) AND name BEGINS 'Text'
+
+↓
+
+(price GT 1000 AND name BEGINS 'Text')  
+OR  
+(qty GT 5 AND name BEGINS 'Text')
+
+### Safety Limits
+
+if branchCount > 8 → fallback to EXISTS
+
+---
+
+## ⚡ Query Capabilities
+
+### Filtering
+
+- JOIN for AND
+- UNION for OR
+- EXISTS fallback
 
 ### Components
 
@@ -260,21 +287,32 @@ POST   /api/products/{id}/images
 
 ## 🧱 Architecture
 
-```text
-Request
-  ↓
-DTO / Input
-  ↓
-Processor / Provider
-  ↓
-Domain Services
-  ↓
-Doctrine / DBAL
-  ↓
-DTO / Output
-  ↓
-API Response
-```
+Request → QueryPlan → CountFetcher → IdsFetcher → Loaders → Assembler → Response
+
+---
+
+## ⚡ Performance Considerations
+
+### Query Optimizations
+
+#### 1. DNF-based execution
+- transforms logic into branches
+- avoids heavy EXISTS usage
+
+#### 2. Sort reuse
+- filter returns sort values
+- avoids duplicate JOINs
+
+#### 3. Dedicated COUNT query
+- only product_id
+- no extra columns
+- safe UNION
+
+#### 4. Read model separation
+- filter/sort → ids
+- load data separately
+
+---
 
 ### Write Side
 
