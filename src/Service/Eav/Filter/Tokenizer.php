@@ -53,11 +53,6 @@ final class Tokenizer
                 continue;
             }
 
-            if ($this->isOperatorStart($char)) {
-                $tokens[] = $this->readOperator($input, $position);
-                continue;
-            }
-
             if ($this->isIdentifierStart($char)) {
                 $tokens[] = $this->readIdentifierOrKeyword($input, $position);
                 continue;
@@ -120,37 +115,6 @@ final class Tokenizer
         );
     }
 
-    private function readOperator(string $input, int &$position): Token
-    {
-        $start = $position;
-        $length = strlen($input);
-
-        if ($position + 1 < $length) {
-            $twoCharOperator = substr($input, $position, 2);
-
-            if (in_array($twoCharOperator, ['>=', '<=', '!='], true)) {
-                $position += 2;
-
-                return new Token(Token::OPERATOR, $this->normalizeOperator($twoCharOperator), $start);
-            }
-        }
-
-        $oneCharOperator = $input[$position];
-
-        if (in_array($oneCharOperator, ['=', '>', '<', '~'], true)) {
-            $position++;
-
-            return new Token(Token::OPERATOR, $this->normalizeOperator($oneCharOperator), $start);
-        }
-
-        throw new InvalidFilterException(
-            $this->translator->trans('eav.filter.unsupported_operator', [
-                '%operator%' => $oneCharOperator,
-                '%position%' => (string) $start,
-            ])
-        );
-    }
-
     private function readIdentifierOrKeyword(string $input, int &$position): Token
     {
         $start = $position;
@@ -207,29 +171,11 @@ final class Tokenizer
                 break;
             }
 
-            if ($this->isOperatorStart($char)) {
-                break;
-            }
-
             $value .= $char;
             $position++;
         }
 
         return new Token(Token::VALUE, $value, $start);
-    }
-
-    private function normalizeOperator(string $operator): string
-    {
-        return match ($operator) {
-            '=' => 'EQ',
-            '!=' => 'NE',
-            '>' => 'GT',
-            '>=' => 'GE',
-            '<' => 'LT',
-            '<=' => 'LE',
-            '~' => 'BEGINS',
-            default => throw new \LogicException(sprintf('Unsupported operator "%s".', $operator)),
-        };
     }
 
     private function isWhitespace(string $char): bool
@@ -245,10 +191,5 @@ final class Tokenizer
     private function isIdentifierStart(string $char): bool
     {
         return preg_match('/[A-Za-z_]/', $char) === 1;
-    }
-
-    private function isOperatorStart(string $char): bool
-    {
-        return in_array($char, ['=', '!', '>', '<', '~'], true);
     }
 }

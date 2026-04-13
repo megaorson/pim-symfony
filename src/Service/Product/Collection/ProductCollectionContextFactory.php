@@ -38,15 +38,18 @@ final class ProductCollectionContextFactory
         );
     }
 
-    private function parsePage(mixed $value): int
-    {
+    private function parseNumber(
+        mixed $value,
+        int $default = self::DEFAULT_LIMIT,
+        string $type = 'limit'
+    ): int {
         if ($value === null || $value === '') {
-            return self::DEFAULT_PAGE;
+            return $default;
         }
 
         if (!is_scalar($value)) {
             throw new InvalidPaginationException(
-                $this->translator->trans('product.collection.invalid_page', [
+                $this->translator->trans('product.collection.invalid_' . $type, [
                     '%value%' => get_debug_type($value),
                 ])
             );
@@ -56,13 +59,18 @@ final class ProductCollectionContextFactory
 
         if ($value === '' || preg_match('/^\d+$/', $value) !== 1) {
             throw new InvalidPaginationException(
-                $this->translator->trans('product.collection.invalid_page', [
+                $this->translator->trans('product.collection.invalid_' . $type, [
                     '%value%' => $value,
                 ])
             );
         }
 
-        $page = (int) $value;
+        return (int) $value;
+    }
+
+    private function parsePage(mixed $value): int
+    {
+        $page = $this->parseNumber($value, self::DEFAULT_PAGE, 'page');
 
         if ($page < 1) {
             throw new InvalidPaginationException(
@@ -77,33 +85,7 @@ final class ProductCollectionContextFactory
 
     private function parseLimit(mixed $value): int
     {
-        if ($value === null || $value === '') {
-            return self::DEFAULT_LIMIT;
-        }
-
-        if (!is_scalar($value)) {
-            throw new InvalidPaginationException(
-                $this->translator->trans('product.collection.invalid_limit', [
-                    '%value%' => get_debug_type($value),
-                    '%min%' => '1',
-                    '%max%' => (string) self::MAX_LIMIT,
-                ])
-            );
-        }
-
-        $value = trim((string) $value);
-
-        if ($value === '' || preg_match('/^\d+$/', $value) !== 1) {
-            throw new InvalidPaginationException(
-                $this->translator->trans('product.collection.invalid_limit', [
-                    '%value%' => $value,
-                    '%min%' => '1',
-                    '%max%' => (string) self::MAX_LIMIT,
-                ])
-            );
-        }
-
-        $limit = (int) $value;
+        $limit = $this->parseNumber($value);
 
         if ($limit < 1 || $limit > self::MAX_LIMIT) {
             throw new InvalidPaginationException(
@@ -129,52 +111,12 @@ final class ProductCollectionContextFactory
         return $value === '' ? null : $value;
     }
 
-    /**
-     * @return list<string>
-     */
-    private function parseSelectFields(mixed $value): array
-    {
-        if (!is_string($value) || trim($value) === '') {
-            return [];
-        }
-
-        $result = [];
-        $seen = [];
-
-        foreach (explode(',', $value) as $item) {
-            $item = trim($item);
-
-            if ($item === '') {
-                throw new InvalidSelectException(
-                    $this->translator->trans('product.collection.invalid_select_field', [
-                        '%field%' => $item,
-                    ])
-                );
-            }
-
-            if ($item !== '*' && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $item) !== 1) {
-                throw new InvalidSelectException(
-                    $this->translator->trans('product.collection.invalid_select_field', [
-                        '%field%' => $item,
-                    ])
-                );
-            }
-
-            if (isset($seen[$item])) {
-                continue;
-            }
-
-            $seen[$item] = true;
-            $result[] = $item;
-        }
-
-        return $result;
-    }
-
-    /**
-     * @return list<array{field: string, direction: 'ASC'|'DESC'}>
-     */
-    private function parseSorts(mixed $value): array
+    private function parseString(
+        mixed $value,
+        string $classException = 'InvalidSelectException',
+        string $type = 'sort_field',
+        callable $normalize = null
+    ): array
     {
         if (!is_string($value) || trim($value) === '') {
             return [];
@@ -187,42 +129,90 @@ final class ProductCollectionContextFactory
             $part = trim($part);
 
             if ($part === '') {
-                throw new InvalidSortException(
-                    $this->translator->trans('product.collection.invalid_sort_field', [
+                throw new $classException(
+                    $this->translator->trans('product.collection.invalid_' . $type, [
                         '%field%' => $part,
                     ])
                 );
             }
-
-            $direction = 'ASC';
+            $item = $normalize($part);
             $field = $part;
-
-            if (str_starts_with($part, '-')) {
-                $direction = 'DESC';
-                $field = substr($part, 1);
-            }
-
-            $field = trim($field);
-
-            if ($field === '' || preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $field) !== 1) {
-                throw new InvalidSortException(
-                    $this->translator->trans('product.collection.invalid_sort_field', [
-                        '%field%' => $field !== '' ? $field : $part,
-                    ])
-                );
-            }
 
             if (isset($seen[$field])) {
                 continue;
             }
 
             $seen[$field] = true;
-            $result[] = [
-                'field' => $field,
-                'direction' => $direction,
-            ];
+            $result[] = $item;
         }
 
         return $result;
+    }
+
+    /**
+     * @return list<string>
+     */
+    private function parseSelectFields(mixed $value): array
+    {
+        return $this->parseString(
+            $value,
+            'InvalidSelectException',
+            'select_field',
+            function ($item) {
+                if ($item === '') {
+                    throw new InvalidSelectException(
+                        $this->translator->trans('product.collection.invalid_select_field', [
+                            '%field%' => $item,
+                        ])
+                    );
+                }
+
+                if ($item !== '*' && preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $item) !== 1) {
+                    throw new InvalidSelectException(
+                        $this->translator->trans('product.collection.invalid_select_field', [
+                            '%field%' => $item,
+                        ])
+                    );
+                }
+
+                return $item;
+            }
+        );
+    }
+
+    /**
+     * @return list<array{field: string, direction: 'ASC'|'DESC'}>
+     */
+    private function parseSorts(mixed $value): array
+    {
+        return $this->parseString(
+            $value,
+            'InvalidSortException',
+            'sort_field',
+            function ($part) {
+                $direction = 'ASC';
+                $field = $part;
+
+                if (str_starts_with($part, '-')) {
+                    $direction = 'DESC';
+                    $field = substr($part, 1);
+                }
+
+                $field = trim($field);
+
+                if ($field === '' || preg_match('/^[A-Za-z_][A-Za-z0-9_]*$/', $field) !== 1) {
+                    throw new InvalidSortException(
+                        $this->translator->trans('product.collection.invalid_sort_field', [
+                            '%field%' => $field !== '' ? $field : $part,
+                        ])
+                    );
+                }
+
+                return [
+                    'field' => $field,
+                    'direction' => $direction,
+                ];
+            }
+        );
     }
 }

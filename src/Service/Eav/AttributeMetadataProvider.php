@@ -6,24 +6,36 @@ namespace App\Service\Eav;
 use App\Repository\ProductAttributeRepository;
 use App\Service\Eav\Dto\AttributeMetadata;
 
-final readonly class AttributeMetadataProvider
+final class AttributeMetadataProvider
 {
+    /**
+     * @var array<string, AttributeMetadata|null>
+     */
+    private array $attributeCache = [];
+
+    /**
+     * @var list<AttributeMetadata>|null
+     */
+    private ?array $allAttributesCache = null;
+
     public function __construct(
-        private ProductAttributeRepository $attributeRepository,
+        private readonly ProductAttributeRepository $attributeRepository,
     ) {
     }
 
     public function getByCode(string $code): ?AttributeMetadata
     {
-        $code = trim($code);
+        $code = $this->normalizeCode($code);
 
-        if ($code === '') {
+        if ($code === null) {
             return null;
         }
 
-        $row = $this->attributeRepository
-            ->createQueryBuilder('a')
-            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired')
+        if (array_key_exists($code, $this->attributeCache)) {
+            return $this->attributeCache[$code];
+        }
+
+        $row = $this->createBaseQueryBuilder()
             ->andWhere('a.code = :code')
             ->setParameter('code', $code)
             ->setMaxResults(1)
@@ -31,10 +43,15 @@ final readonly class AttributeMetadataProvider
             ->getOneOrNullResult();
 
         if (!is_array($row)) {
+            $this->attributeCache[$code] = null;
+
             return null;
         }
 
-        return $this->mapRowToMetadata($row);
+        $metadata = $this->mapRowToMetadata($row);
+        $this->attributeCache[$metadata->code] = $metadata;
+
+        return $metadata;
     }
 
     /**
@@ -43,28 +60,50 @@ final readonly class AttributeMetadataProvider
      */
     public function getByCodes(array $codes): array
     {
-        $codes = array_values(array_unique(array_filter(
-            array_map(static fn (mixed $code): string => trim((string) $code), $codes),
-            static fn (string $code): bool => $code !== ''
-        )));
+        $normalizedCodes = $this->normalizeCodes($codes);
 
-        if ($codes === []) {
+        if ($normalizedCodes === []) {
             return [];
         }
 
-        $rows = $this->attributeRepository
-            ->createQueryBuilder('a')
-            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired')
-            ->andWhere('a.code IN (:codes)')
-            ->setParameter('codes', $codes)
-            ->getQuery()
-            ->getArrayResult();
-
         $result = [];
+        $missingCodes = [];
 
-        foreach ($rows as $row) {
-            $metadata = $this->mapRowToMetadata($row);
-            $result[$metadata->code] = $metadata;
+        foreach ($normalizedCodes as $code) {
+            if (array_key_exists($code, $this->attributeCache)) {
+                $cached = $this->attributeCache[$code];
+
+                if ($cached !== null) {
+                    $result[$code] = $cached;
+                }
+
+                continue;
+            }
+
+            $missingCodes[] = $code;
+        }
+
+        if ($missingCodes !== []) {
+            $rows = $this->createBaseQueryBuilder()
+                ->andWhere('a.code IN (:codes)')
+                ->setParameter('codes', $missingCodes)
+                ->getQuery()
+                ->getArrayResult();
+
+            $loadedCodes = [];
+
+            foreach ($rows as $row) {
+                $metadata = $this->mapRowToMetadata($row);
+                $this->attributeCache[$metadata->code] = $metadata;
+                $result[$metadata->code] = $metadata;
+                $loadedCodes[$metadata->code] = true;
+            }
+
+            foreach ($missingCodes as $code) {
+                if (!isset($loadedCodes[$code])) {
+                    $this->attributeCache[$code] = null;
+                }
+            }
         }
 
         return $result;
@@ -75,17 +114,27 @@ final readonly class AttributeMetadataProvider
      */
     public function getAll(): array
     {
-        $rows = $this->attributeRepository
-            ->createQueryBuilder('a')
-            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired')
+        if ($this->allAttributesCache !== null) {
+            return $this->allAttributesCache;
+        }
+
+        $rows = $this->createBaseQueryBuilder()
             ->orderBy('a.code', 'ASC')
             ->getQuery()
             ->getArrayResult();
 
-        return array_map(
+        $result = array_map(
             fn (array $row): AttributeMetadata => $this->mapRowToMetadata($row),
             $rows
         );
+
+        foreach ($result as $metadata) {
+            $this->attributeCache[$metadata->code] = $metadata;
+        }
+
+        $this->allAttributesCache = array_values($result);
+
+        return $this->allAttributesCache;
     }
 
     /**
@@ -126,19 +175,39 @@ final readonly class AttributeMetadataProvider
      */
     public function getAllRequired(): array
     {
-        $rows = $this->attributeRepository
-            ->createQueryBuilder('a')
-            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired')
-            ->andWhere('a.isRequired = :required')
-            ->setParameter('required', true)
-            ->orderBy('a.code', 'ASC')
-            ->getQuery()
-            ->getArrayResult();
+        return array_values(array_filter(
+            $this->getAll(),
+            static fn (AttributeMetadata $metadata): bool => $metadata->required
+        ));
+    }
 
-        return array_map(
-            fn (array $row): AttributeMetadata => $this->mapRowToMetadata($row),
-            $rows
-        );
+    private function createBaseQueryBuilder()
+    {
+        return $this->attributeRepository
+            ->createQueryBuilder('a')
+            ->select('a.id, a.code, a.type, a.isSelectable, a.isFilterable, a.isSortable, a.isRequired');
+    }
+
+    private function normalizeCode(string $code): ?string
+    {
+        $code = trim($code);
+
+        return $code === '' ? null : $code;
+    }
+
+    /**
+     * @param list<string> $codes
+     * @return list<string>
+     */
+    private function normalizeCodes(array $codes): array
+    {
+        return array_values(array_unique(array_filter(
+            array_map(
+                fn (mixed $code): string => trim((string) $code),
+                $codes
+            ),
+            static fn (string $code): bool => $code !== ''
+        )));
     }
 
     /**

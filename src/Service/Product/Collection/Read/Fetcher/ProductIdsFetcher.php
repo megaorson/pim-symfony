@@ -55,7 +55,6 @@ final readonly class ProductIdsFetcher
         $this->sortSqlBuilder->apply(
             qb: $qb,
             plan: $plan,
-            rootAlias: 'p',
             filterAlias: $optimizedSource !== null ? 'f' : null,
             optimizedSource: $optimizedSource,
         );
