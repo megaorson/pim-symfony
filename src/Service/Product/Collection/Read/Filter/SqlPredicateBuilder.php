@@ -13,16 +13,8 @@ final readonly class SqlPredicateBuilder
     ) {
     }
 
-    /**
-     * @param mixed $preparedValue
-     * @return array{0:string,1:array<string,mixed>}
-     */
-    public function build(
-        string $fieldExpression,
-        string $operator,
-        mixed $preparedValue,
-        string $paramBase,
-    ): array {
+    public function build(string $fieldExpression, string $operator, mixed $preparedValue, string $paramBase): array
+    {
         return match ($operator) {
             'EQ' => [sprintf('%s = :%s', $fieldExpression, $paramBase), [$paramBase => $preparedValue]],
             'NE' => [sprintf('%s != :%s', $fieldExpression, $paramBase), [$paramBase => $preparedValue]],
@@ -38,10 +30,6 @@ final readonly class SqlPredicateBuilder
         };
     }
 
-    /**
-     * @param mixed $value
-     * @return array{0:string,1:array<string,mixed>}
-     */
     private function compileInPredicate(string $fieldExpression, mixed $value, string $paramBase): array
     {
         if (!is_array($value) || $value === []) {
@@ -61,9 +49,6 @@ final readonly class SqlPredicateBuilder
             $parameters[$param] = $item;
         }
 
-        return [
-            sprintf('%s IN (%s)', $fieldExpression, implode(', ', $placeholders)),
-            $parameters,
-        ];
+        return [sprintf('%s IN (%s)', $fieldExpression, implode(', ', $placeholders)), $parameters];
     }
 }

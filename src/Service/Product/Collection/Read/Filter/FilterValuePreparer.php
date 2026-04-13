@@ -19,9 +19,6 @@ final readonly class FilterValuePreparer
         return $this->baseFieldTypeResolver->resolve($field);
     }
 
-    /**
-     * @param mixed $rawValue
-     */
     public function prepare(string $field, string $operator, mixed $rawValue, string $type): mixed
     {
         if (!is_string($rawValue)) {
@@ -57,9 +54,6 @@ final readonly class FilterValuePreparer
         return $value;
     }
 
-    /**
-     * @return list<int|float|string>
-     */
     private function parseInValues(string $value, string $type): array
     {
         $value = trim($value);
@@ -92,9 +86,6 @@ final readonly class FilterValuePreparer
         return array_values($result);
     }
 
-    /**
-     * @return list<string>
-     */
     private function splitInValues(string $input): array
     {
         $items = [];
