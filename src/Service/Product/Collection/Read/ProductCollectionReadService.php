@@ -5,20 +5,18 @@ namespace App\Service\Product\Collection\Read;
 
 use App\ApiResource\Dto\ProductCollectionOutput;
 use App\Service\Product\Collection\ProductCollectionContext;
-use App\Service\Product\Collection\Read\Fetcher\ProductAttributeValuesFetcher;
-use App\Service\Product\Collection\Read\Fetcher\ProductBaseFieldsFetcher;
-use App\Service\Product\Collection\Read\Fetcher\ProductCountFetcher;
-use App\Service\Product\Collection\Read\Fetcher\ProductIdsFetcher;
+use App\Service\Product\Flat\Read\ProductFlatCountFetcher;
+use App\Service\Product\Flat\Read\ProductFlatDataFetcher;
+use App\Service\Product\Flat\Read\ProductFlatOutputFactory;
+use App\Service\Product\Flat\Read\ProductFlatQueryPlanner;
 
 final readonly class ProductCollectionReadService
 {
     public function __construct(
-        private ProductCollectionQueryPlanner $queryPlanner,
-        private ProductIdsFetcher $idsFetcher,
-        private ProductCountFetcher $countFetcher,
-        private ProductBaseFieldsFetcher $baseFieldsFetcher,
-        private ProductAttributeValuesFetcher $attributeValuesFetcher,
-        private ProductCollectionAssembler $assembler,
+        private ProductFlatQueryPlanner $queryPlanner,
+        private ProductFlatCountFetcher $countFetcher,
+        private ProductFlatDataFetcher $dataFetcher,
+        private ProductFlatOutputFactory $outputFactory,
     ) {
     }
 
@@ -27,26 +25,13 @@ final readonly class ProductCollectionReadService
         $plan = $this->queryPlanner->build($context);
 
         $total = $this->countFetcher->count($plan);
+        $rows = $this->dataFetcher->fetch($plan);
 
-        if ($total === 0) {
-            return $this->assembler->assembleEmpty($context, $total);
-        }
-
-        $ids = $this->idsFetcher->fetchIds($plan);
-
-        if ($ids === []) {
-            return $this->assembler->assembleEmpty($context, $total);
-        }
-
-        $baseRows = $this->baseFieldsFetcher->fetchByIds($ids, $plan);
-        $attributeRowsByProductId = $this->attributeValuesFetcher->fetchByIds($ids, $plan);
-
-        return $this->assembler->assemble(
-            ids: $ids,
-            baseRows: $baseRows,
-            attributeRowsByProductId: $attributeRowsByProductId,
-            context: $context,
+        return $this->outputFactory->createCollection(
+            rows: $rows,
             total: $total,
+            limit: $plan->limit,
+            offset: $plan->offset,
         );
     }
 }

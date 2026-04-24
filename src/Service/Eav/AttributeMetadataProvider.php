@@ -11,7 +11,7 @@ final class AttributeMetadataProvider
     /**
      * @var array<string, AttributeMetadata|null>
      */
-    private array $attributeCache = [];
+    private ?array $attributeCache = [];
 
     /**
      * @var list<AttributeMetadata>|null
@@ -232,5 +232,11 @@ final class AttributeMetadataProvider
             sortable: (bool) $row['isSortable'],
             required: (bool) $row['isRequired'],
         );
+    }
+
+    public function clearCache(): void
+    {
+        $this->allAttributesCache = null;
+        $this->attributeCache = null;
     }
 }

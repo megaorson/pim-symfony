@@ -27,7 +27,6 @@ trait AttributeTestFactoryTrait
         $attribute->setCode($code);
         $attribute->setName($name);
         $attribute->setType($type);
-
         $attribute->setIsRequired($isRequired);
         $attribute->setIsFilterable($isFilterable);
         $attribute->setIsSortable($isSortable);
@@ -35,6 +34,8 @@ trait AttributeTestFactoryTrait
 
         $this->entityManager->persist($attribute);
         $this->entityManager->flush();
+
+        $this->rebuildFlatIndex();
 
         return $attribute;
     }

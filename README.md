@@ -29,6 +29,11 @@ A key focus of the project is not only correctness, but also **backend architect
 
 The project also includes a growing **functional test suite** for both attribute and product APIs, covering request/response contracts, validation, query features, and persistence side effects.
 
+This approach is inspired by expression parsing techniques described in the book
+*The C++ Programming Language* by Bjarne Stroustrup
+(chapter about building a calculator).
+
+
 ---
 
 ## 🧬 Core Concept
@@ -284,6 +289,53 @@ POST   /api/products/{id}/images
 ```
 
 ---
+
+## ⚡ Flat Read Model (NEW)
+
+The collection endpoint now uses a **flat read model (`product_flat`)** to optimize read performance.
+
+Instead of querying EAV tables directly, the system maintains a denormalized table:
+
+- reduces JOIN/EXISTS complexity
+- enables predictable query performance
+- allows fast filtering and sorting
+
+### Synchronization Strategy
+
+- Attribute changes → full rebuild
+- Product changes → incremental update
+
+---
+
+## 🔧 Value Casting (NEW)
+
+Database values (especially `DECIMAL`) are normalized before returning in API responses using a dedicated service:
+
+`ProductAttributeValueCaster`
+
+This ensures:
+
+- correct JSON types
+- stable API contracts
+- separation between storage and presentation layers
+
+---
+
+## 📊 Future Indexing Strategy (Planned)
+
+Indexing will be implemented as a **query-driven system**:
+
+Query logging → pattern aggregation → index suggestions
+
+Instead of blindly creating indexes for every attribute, the system will:
+
+1. log real API queries
+2. group frequent patterns
+3. suggest optimal composite indexes
+4. allow manual confirmation via admin panel
+
+This prevents over-indexing and keeps write performance stable.
+
 
 ## 🧱 Architecture
 

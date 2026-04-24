@@ -98,3 +98,9 @@ services:
     App\Service\Eav\ProductAttributeUsageChecker:
         arguments:
             $valueEntityMap: '%app.eav_value_entity_map%'
+
+    App\Subscriber\ProductFlatSyncSubscriber:
+        tags:
+            - { name: doctrine.event_listener, event: onFlush }
+            - { name: doctrine.event_listener, event: postFlush }
+            - { name: doctrine.event_listener, event: postPersist }

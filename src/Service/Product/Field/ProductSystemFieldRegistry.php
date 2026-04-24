@@ -34,13 +34,13 @@ final class ProductSystemFieldRegistry
             'filterable' => true,
         ],
         'createdAt' => [
-            'doctrineField' => 'createdAt',
+            'doctrineField' => 'created_at',
             'selectable' => true,
             'sortable' => true,
             'filterable' => false,
         ],
         'updatedAt' => [
-            'doctrineField' => 'updatedAt',
+            'doctrineField' => 'updated_at',
             'selectable' => true,
             'sortable' => true,
             'filterable' => false,
